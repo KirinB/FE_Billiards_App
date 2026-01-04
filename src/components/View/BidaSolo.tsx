@@ -8,7 +8,6 @@ import { toast } from "sonner";
 export const BidaSoloView = ({
   room,
   onUpdateScore,
-  onUndo,
   isReadOnly,
 }: {
   room: any;

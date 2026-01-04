@@ -1,15 +1,8 @@
-import {
-  RotateCcw,
-  Trophy,
-  User,
-  History,
-  KeyRound,
-  LogOut,
-} from "lucide-react";
 import { cn } from "@/lib/utils";
+import { RoomService } from "@/services/room.service";
+import { KeyRound, LogOut, Trophy, User } from "lucide-react";
 import { useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { RoomService } from "@/services/room.service";
 import { toast } from "sonner";
 
 export const BidaSoloView = ({

@@ -1,6 +1,6 @@
-import { Home, Settings, MessageCircle } from "lucide-react";
-import { useLocation, useNavigate } from "react-router-dom";
 import { cn } from "@/lib/utils";
+import { Home, MessageCircle } from "lucide-react";
+import { useLocation, useNavigate } from "react-router-dom";
 
 const Footer = () => {
   const location = useLocation();

@@ -1,13 +1,7 @@
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
-import { cn } from "@/lib/utils";
-import { Facebook, Bug, MessageCircle, Heart } from "lucide-react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { APP_INFO, VERSION_STRING } from "@/const/app";
+import { cn } from "@/lib/utils";
+import { Bug, Facebook, Heart, MessageCircle } from "lucide-react";
 
 const Contact = () => {
   return (

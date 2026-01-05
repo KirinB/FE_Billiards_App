@@ -1,0 +1,41 @@
+name: Deploy Frontend Bida
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Deploy to Server via SSH
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.REMOTE_HOST }}
+          username: ${{ secrets.REMOTE_USER }}
+          key: ${{ secrets.SSH_PRIVATE_KEY }}
+          port: ${{ secrets.REMOTE_PORT }}
+          script: |
+            cd ${{ secrets.TARGET_DIR }}
+
+
+            git fetch --all
+            git reset --hard origin/main
+
+            # 3. Cài đặt thư viện
+            npm install
+
+            # 4. Bước quan trọng: Build dự án
+            # Lệnh này sẽ tạo ra thư mục 'dist' hoặc 'build'
+            npm run build
+
+            # 5. Nếu bạn chạy Frontend bằng PM2 (cho Next.js hoặc SSR)
+            # NODE_ENV=production pm2 restart bida-fe --update-env || NODE_ENV=production pm2 start npm --name "bida-fe" -- start
+
+            # 6. Nếu bạn chỉ dùng Nginx để chạy file tĩnh (React/Vue/Vite)
+            # Bạn không cần PM2, chỉ cần đảm bảo Nginx trỏ vào đúng thư mục /dist
+            echo "Build Frontend hoàn tất!"

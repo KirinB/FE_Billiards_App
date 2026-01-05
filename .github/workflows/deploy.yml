@@ -33,9 +33,6 @@ jobs:
             # Lệnh này sẽ tạo ra thư mục 'dist' hoặc 'build'
             npm run build
 
-            # 5. Nếu bạn chạy Frontend bằng PM2 (cho Next.js hoặc SSR)
-            # NODE_ENV=production pm2 restart bida-fe --update-env || NODE_ENV=production pm2 start npm --name "bida-fe" -- start
-
-            # 6. Nếu bạn chỉ dùng Nginx để chạy file tĩnh (React/Vue/Vite)
-            # Bạn không cần PM2, chỉ cần đảm bảo Nginx trỏ vào đúng thư mục /dist
+            # 5. Di chuyển nội dung build đến thư mục phục vụ bởi Nginx
+            sudo systemctl reload nginx
             echo "Build Frontend hoàn tất!"

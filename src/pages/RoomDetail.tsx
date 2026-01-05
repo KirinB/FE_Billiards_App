@@ -26,6 +26,7 @@ export const RoomPage = () => {
 
       // FIX LỖI TYPE: Truy cập an toàn qua res.data hoặc res trực tiếp
       const data = res?.data?.room || res?.room || res?.data || res;
+      console.log({ data });
       setRoom(data);
 
       if (pinToUse) localStorage.setItem(`room_pin_${roomId}`, pinToUse);

@@ -38,7 +38,7 @@ export const BidaPenaltyView: React.FC<Props> = ({
   const [loading, setLoading] = useState(false);
 
   const players = useMemo(() => {
-    return [...(room?.players || [])].sort((a, b) => a.id.localeCompare(b.id));
+    return [...(room?.players || [])].sort((a, b) => a.id - b.id);
   }, [room?.players]);
 
   const handleSelectWinner = (id: string) => {

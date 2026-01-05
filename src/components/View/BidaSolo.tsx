@@ -18,8 +18,7 @@ export const BidaSoloView = ({
   const navigate = useNavigate();
 
   const players = useMemo(() => {
-    if (!room?.players) return [];
-    return [...room.players].sort((a, b) => a.id.localeCompare(b.id));
+    return [...(room?.players || [])].sort((a, b) => a.id - b.id);
   }, [room?.players]);
 
   const handleChangePin = () => {

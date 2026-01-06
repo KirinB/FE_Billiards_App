@@ -3,7 +3,7 @@ import { RoomService } from "@/services/room.service";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { RotateCcw, Swords, Minus, Plus, LogOut } from "lucide-react";
+import { Swords, Minus, Plus, LogOut } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { PlayerScoreRow } from "@/components/PlayerScoreRow";
 import ScoreHistory from "../ScoreHistory";
@@ -101,42 +101,51 @@ export const BidaPenaltyView: React.FC<Props> = ({
 
     try {
       await RoomService.finish(room.id, savedPin || "");
-
-      // XÓA MÃ PIN KHỎI LOCALSTORAGE
       localStorage.removeItem(pinKey);
-
       toast.success("Đã kết thúc và xóa mã PIN lưu trữ!");
       navigate("/");
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Lỗi khi kết thúc");
     }
   };
+
   const achievements = useMemo(() => {
     const stats = {
-      topBi9Id: null as string | null,
-      maxTurnId: null as string | null,
+      topBi9Id: null as number | null,
+      maxTurnId: null as number | null,
       topBi9Count: 0,
       maxTurnScore: 0,
     };
-    const bi9Map: Record<string, number> = {};
+
+    const bi9Map: Record<number, number> = {};
+
     room?.history?.forEach((h: any) => {
-      const log = h.rawLog;
+      const log =
+        typeof h.rawLog === "string" ? JSON.parse(h.rawLog) : h.rawLog;
       if (!log || log.type !== "DIEM_DEN") return;
+
+      const pId = Number(log.currentPlayerId);
+
+      // Cơ điên
       if (log.totalEarned > stats.maxTurnScore) {
         stats.maxTurnScore = log.totalEarned;
-        stats.maxTurnId = log.currentPlayerId;
+        stats.maxTurnId = pId;
       }
-      const bi9Event = log.events?.find((e: any) => e.bi === 9);
-      if (bi9Event)
-        bi9Map[log.currentPlayerId] =
-          (bi9Map[log.currentPlayerId] || 0) + bi9Event.count;
+
+      // Vua chốt 9
+      const bi9Event = log.events?.find((e: any) => Number(e.bi) === 9);
+      if (bi9Event) {
+        bi9Map[pId] = (bi9Map[pId] || 0) + Number(bi9Event.count);
+      }
     });
+
     Object.entries(bi9Map).forEach(([id, count]) => {
       if (count > stats.topBi9Count) {
         stats.topBi9Count = count;
-        stats.topBi9Id = id;
+        stats.topBi9Id = Number(id);
       }
     });
+
     return stats;
   }, [room?.history]);
 
@@ -147,7 +156,6 @@ export const BidaPenaltyView: React.FC<Props> = ({
           <Label className="text-[#a8c5bb] text-[10px] font-black uppercase tracking-widest opacity-70">
             Người thắng (Cầm cơ)
           </Label>
-          <ScoreHistory room={room} onUpdateRoom={onUpdateRoom} />
         </div>
         <div className="flex flex-col gap-1">
           {players.map((p: any) => (
@@ -236,13 +244,11 @@ export const BidaPenaltyView: React.FC<Props> = ({
       {!isReadOnly && (
         <div className="flex flex-col gap-3 pt-2">
           <div className="grid grid-cols-4 gap-3">
-            <Button
-              variant="outline"
-              className="col-span-1 rounded-xl h-12 bg-white/5 border-white/10 text-white/50"
-              onClick={() => toast.info("Mở Lịch sử để Undo")}
-            >
-              <RotateCcw size={20} />
-            </Button>
+            {/* THAY THẾ NÚT UNDO BẰNG SCORE HISTORY */}
+            <div className="col-span-1">
+              <ScoreHistory room={room} onUpdateRoom={onUpdateRoom} />
+            </div>
+
             <Button
               className="col-span-3 rounded-xl h-12 bg-[#f2c94c] text-black font-black uppercase tracking-widest shadow-lg shadow-[#f2c94c]/20"
               onClick={handleApply}
@@ -251,6 +257,7 @@ export const BidaPenaltyView: React.FC<Props> = ({
               {loading ? "ĐANG LƯU..." : "XÁC NHẬN GHI ĐIỂM"}
             </Button>
           </div>
+
           <Button
             variant="ghost"
             className="w-full rounded-xl h-10 border border-red-500/20 bg-red-500/5 text-red-400/60 hover:text-red-400 text-[10px] font-bold uppercase tracking-widest"

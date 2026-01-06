@@ -16,6 +16,8 @@ import { toast } from "sonner";
 import * as z from "zod";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
+import { useNavigate } from "react-router-dom";
+import type { CreateRoomDto } from "@/types/room.type";
 
 const roomFormSchema = z
   .object({
@@ -44,6 +46,7 @@ type RoomFormValues = z.infer<typeof roomFormSchema>;
 
 const CreateRoomDialog = ({ onSuccess }: { onSuccess?: () => void }) => {
   const [open, setOpen] = useState(false);
+  const navigate = useNavigate();
 
   const {
     handleSubmit,
@@ -114,15 +117,20 @@ const CreateRoomDialog = ({ onSuccess }: { onSuccess?: () => void }) => {
         valBi9: values.penaltyPoints[2].value,
       };
 
-      await RoomService.create(payload as any);
-
+      const res = await RoomService.create(payload as CreateRoomDto);
+      console.log(res);
+      const roomId = res.id;
       toast.success("Tạo ván đấu thành công!", { id: "create-room" });
       setOpen(false);
       if (onSuccess) onSuccess();
+      if (roomId) {
+        navigate(`/room/${roomId}`);
+      }
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Lỗi tạo phòng", {
         id: "create-room",
       });
+      console.log(error);
     }
   };
 

@@ -9,9 +9,11 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { Loader2, PlayCircle, Trophy, Users } from "lucide-react";
-import CreateRoomDialog from "@/components/CreateRoomDialog"; // Đảm bảo đúng đường dẫn file
+import { Loader2, PlayCircle, Trophy, Users, RotateCw } from "lucide-react";
+import CreateRoomDialog from "@/components/CreateRoomDialog";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
+import { toast } from "sonner"; // Hoặc bất cứ thư viện thông báo nào bạn đang dùng
 
 interface Room {
   id: string;
@@ -23,27 +25,41 @@ interface Room {
 const HomePage = () => {
   const [rooms, setRooms] = useState<Room[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
+  const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
+  const [lastFetch, setLastFetch] = useState<number>(0); // Lưu timestamp lần cuối reload
   const navigate = useNavigate();
 
-  // Hàm fetch dữ liệu
-  const fetchRooms = async () => {
+  const COOLDOWN_TIME = 3000; // 3 giây cooldown
+
+  const fetchRooms = async (silent = false) => {
+    const now = Date.now();
+
+    // Kiểm tra cooldown nếu là reload thủ công (silent = true)
+    if (silent && now - lastFetch < COOLDOWN_TIME) {
+      const remaining = Math.ceil((COOLDOWN_TIME - (now - lastFetch)) / 1000);
+      toast.error(`Vui lòng đợi ${remaining} giây để làm mới tiếp`);
+      return;
+    }
+
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
+      setIsRefreshing(true);
+
       const response: any = await RoomService.getAll();
 
-      // Xử lý dữ liệu trả về (kiểm tra trực tiếp response hoặc response.metaData tùy backend)
       if (response) {
         setRooms(Array.isArray(response) ? response : response.metaData || []);
+        setLastFetch(now); // Cập nhật thời gian fetch thành công
       }
     } catch (error) {
       console.error("Lỗi lấy danh sách phòng:", error);
     } finally {
       setLoading(false);
+      setIsRefreshing(false);
     }
   };
 
   const handleJoinRoom = (roomId: string) => {
-    // Chuyển hướng sang trang chi tiết bàn đấu
     navigate(`/room/${roomId}`);
   };
 
@@ -53,25 +69,39 @@ const HomePage = () => {
 
   return (
     <div className="flex flex-col gap-6 pb-10">
-      {/* HEADER: Tiêu đề và Component Dialog Tạo mới */}
       <div className="flex items-center justify-between px-1 mt-2">
-        <div>
-          <h1 className="text-2xl font-black uppercase tracking-tighter text-white flex items-center gap-2">
-            <Trophy className="text-[#f2c94c] size-6" />
-            Ván đấu
-          </h1>
-          <p className="text-[10px] uppercase text-[#a8c5bb] font-bold opacity-60 tracking-widest mt-0.5">
-            {loading
-              ? "Đang cập nhật..."
-              : `${rooms?.length || 0} phòng sẵn sàng`}
-          </p>
+        <div className="flex items-center gap-3">
+          <div>
+            <h1 className="text-2xl font-black uppercase tracking-tighter text-white flex items-center gap-2">
+              <Trophy className="text-[#f2c94c] size-6" />
+              Ván đấu
+            </h1>
+            <p className="text-[10px] uppercase text-[#a8c5bb] font-bold opacity-60 tracking-widest mt-0.5">
+              {loading
+                ? "Đang cập nhật..."
+                : `${rooms?.length || 0} phòng sẵn sàng`}
+            </p>
+          </div>
+
+          <Button
+            variant="ghost"
+            size="icon"
+            className={cn(
+              "h-8 w-8 rounded-full bg-white/5 text-[#a8c5bb] hover:text-white mt-[-8px] transition-all",
+              isRefreshing && "opacity-50"
+            )}
+            onClick={() => fetchRooms(true)}
+            disabled={isRefreshing || loading}
+          >
+            <RotateCw
+              className={cn("size-4", isRefreshing && "animate-spin")}
+            />
+          </Button>
         </div>
 
-        {/* THAY THẾ NÚT BUTTON CŨ BẰNG DIALOG */}
-        <CreateRoomDialog onSuccess={fetchRooms} />
+        <CreateRoomDialog onSuccess={() => fetchRooms(true)} />
       </div>
 
-      {/* DANH SÁCH PHÒNG */}
       <div className="grid grid-cols-1 gap-4">
         {loading ? (
           <div className="flex flex-col items-center justify-center py-20 gap-3">
@@ -84,15 +114,15 @@ const HomePage = () => {
           rooms.map((room) => (
             <Card
               key={room.id}
-              className="cursor-pointer active:scale-[0.98] transition-all"
+              className="cursor-pointer active:scale-[0.98] transition-all bg-[#1a1a1a] border-white/5 overflow-hidden"
               onClick={() => navigate(`/room/${room.id}`)}
             >
-              <CardHeader>
+              <CardHeader className="pb-2">
                 <div className="flex flex-col gap-1">
-                  <CardTitle className="text-lg tracking-tight">
+                  <CardTitle className="text-lg tracking-tight text-white">
                     {room.name}
                   </CardTitle>
-                  <CardDescription className="flex items-center gap-1.5 uppercase tracking-widest">
+                  <CardDescription className="flex items-center gap-1.5 uppercase tracking-widest text-xs">
                     <Users className="size-3" />
                     {room.type === "BIDA_DIEM_DEN"
                       ? "Bida Điểm Đến"
@@ -106,7 +136,7 @@ const HomePage = () => {
                 </CardAction>
               </CardHeader>
 
-              <CardContent className="flex items-center justify-between">
+              <CardContent className="flex items-center justify-between pt-0">
                 <div className="flex flex-col">
                   <span className="text-[9px] uppercase font-bold text-[#a8c5bb] opacity-40">
                     Cập nhật cuối
@@ -121,11 +151,10 @@ const HomePage = () => {
 
                 <Button
                   variant="ghost"
-                  className="bg-[#f2c94c] hover:bg-[#d4af37] text-black text-[10px] font-black px-4 py-2 rounded-xl uppercase shadow-lg"
+                  className="bg-[#f2c94c] hover:bg-[#d4af37] text-black text-[10px] font-black px-4 py-2 rounded-xl uppercase shadow-lg h-8"
                   onClick={(e) => {
-                    e.stopPropagation(); // Ngăn sự kiện click bị double với Card
+                    e.stopPropagation();
                     handleJoinRoom(room.id);
-                    // console.log("a");
                   }}
                 >
                   VÀO BÀN
@@ -141,7 +170,7 @@ const HomePage = () => {
             <h3 className="text-white font-bold uppercase text-sm">
               Chưa có ván đấu nào
             </h3>
-            <p className="text-[#a8c5bb] text-xs opacity-50 mt-1 max-w-50">
+            <p className="text-[#a8c5bb] text-xs opacity-50 mt-1">
               Bấm nút "Tạo mới" để bắt đầu ván bida của bạn.
             </p>
           </div>

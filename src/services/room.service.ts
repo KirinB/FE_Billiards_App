@@ -1,17 +1,7 @@
 import axiosInstance from "@/lib/axios";
+import type { CreateRoomDto, RoomResponse } from "@/types/room.type";
 
 const API_URL = "/rooms";
-
-export interface CreateRoomDto {
-  name: string;
-  type: "BIDA_DIEM_DEN" | "BIDA_1VS1";
-  playerCount: number;
-  names: string[];
-  penaltyPoints: {
-    key: number;
-    value: number;
-  }[];
-}
 
 export interface UpdateScoreDto {
   roomId: string;
@@ -25,29 +15,30 @@ export interface UpdateScoreDto {
 export const RoomService = {
   getAll: async () => {
     const response = await axiosInstance.get(API_URL);
-    return response;
-    // Lưu ý: Nếu backend bọc trong metaData, hãy sửa thành response.data.metaData
+    return response.data;
   },
-  create: async (payload: CreateRoomDto) => {
-    const response = await axiosInstance.post(API_URL, payload);
-    return response;
+
+  create: async (payload: CreateRoomDto): Promise<RoomResponse> => {
+    const response = await axiosInstance.post<RoomResponse>(API_URL, payload);
+    return response.data;
   },
-  getById: async (id: string) => {
-    const res = await axiosInstance.get(`${API_URL}/?roomId=${id}`);
-    return res;
+
+  getById: async (id: string, pin: string) => {
+    const res = await axiosInstance.get(`${API_URL}/${id}`, {
+      params: { pin },
+    });
+    return res.data;
   },
   updateScore: async (payload: UpdateScoreDto) => {
     const response = await axiosInstance.patch(`${API_URL}`, payload);
-    // Backend của bạn trả về { message: "...", data: result }
-    // Chúng ta trả về response.data để lấy được object data (chứa room mới nhất)
     return response.data;
   },
+
   undoScore: async (payload: {
     roomId: string;
     historyId: string;
     pin: string;
   }) => {
-    // Sử dụng method delete của axios
     const response = await axiosInstance.delete(`${API_URL}/undo`, {
       data: payload,
     });

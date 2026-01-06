@@ -96,13 +96,13 @@ const ScoreHistory: React.FC<ScoreHistoryProps> = ({
         <Button
           variant="outline"
           size="icon"
-          className="rounded-xl bg-white/5 border-white/10 text-white"
+          className="rounded-xl bg-white/5 border-white/10 text-white w-full h-full"
         >
           <HistoryIcon className="size-5" />
         </Button>
       </DialogTrigger>
 
-      <DialogContent className="max-w-lg p-0 overflow-hidden flex flex-col bg-[#1a1a1a] border-white/10 text-white">
+      <DialogContent className="p-0 overflow-hidden flex flex-col bg-[#1a1a1a] border-white/10 text-white">
         <DialogHeader className="p-6 pb-2">
           <DialogTitle className="flex items-center gap-2 text-white/90">
             <HistoryIcon className="size-5 opacity-50" /> Lịch sử điểm

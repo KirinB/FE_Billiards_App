@@ -1,7 +1,7 @@
 import { Flame, Target } from "lucide-react";
 
 interface AchievementBadgeProps {
-  playerId: string; // Đổi thành string vì Postgres UUID
+  playerId: string;
   achievements: {
     topBi9Id: string | null;
     maxTurnId: string | null;
@@ -36,7 +36,7 @@ const AchievementBadge = ({
         <div className="flex items-center gap-0.5 bg-black/40 px-1.5 py-0.5 rounded-sm border border-white/10 shadow-sm">
           <Flame className="size-3 text-orange-500" />
           <span className="text-[9px] font-black text-orange-500 leading-none">
-            +{achievements.maxTurnScore}
+            {achievements.maxTurnScore}
           </span>
         </div>
       )}

@@ -10,7 +10,7 @@ const axiosInstance = axios.create({
 
 // Interceptor để lấy thẳng metaData cho khỏe
 axiosInstance.interceptors.response.use(
-  (response) => response.data,
+  (response) => response,
   (error) => Promise.reject(error)
 );
 

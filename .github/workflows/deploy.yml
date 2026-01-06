@@ -20,19 +20,26 @@ jobs:
           key: ${{ secrets.SSH_PRIVATE_KEY }}
           port: ${{ secrets.REMOTE_PORT }}
           script: |
+            # 1. Đi vào thư mục chứa code nguồn
             cd ${{ secrets.TARGET_DIR }}
 
+            # 2. Cấu hình để tránh lỗi Git ownership
+            git config --global --add safe.directory ${{ secrets.TARGET_DIR }}
 
+            # 3. Lấy code mới nhất từ GitHub về
             git fetch --all
             git reset --hard origin/main
 
-            # 3. Cài đặt thư viện
+            # 4. Cài đặt thư viện và Build (Tạo ra thư mục dist)
             npm install
-
-            # 4. Bước quan trọng: Build dự án
-            # Lệnh này sẽ tạo ra thư mục 'dist' hoặc 'build'
             npm run build
 
-            # 5. Di chuyển nội dung build đến thư mục phục vụ bởi Nginx
+            # 5. ĐƯA CODE VÀO SỬ DỤNG (Đây là bước bạn đang thiếu)
+            # Lệnh này copy mọi thứ TRONG thư mục dist vào thư mục chạy web của bạn
+            # -a: giữ nguyên thuộc tính file, -v: hiển thị tiến trình, --delete: xóa file cũ không còn tồn tại trong bản build mới
+            rsync -av --delete dist/ /home/bida.uynghi.com/public_html/frontend/
+
+            # 6. Làm mới Nginx để nhận diện nếu có thay đổi cấu hình (không bắt buộc nhưng nên làm)
             sudo systemctl reload nginx
-            echo "Build Frontend hoàn tất!"
+
+            echo "✅ Đã cập nhật giao diện mới tại bida.uynghi.com"

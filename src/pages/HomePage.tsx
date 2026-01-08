@@ -46,6 +46,7 @@ const HomePage = () => {
       setIsRefreshing(true);
 
       const response: any = await RoomService.getAll();
+      console.log(response.data);
 
       if (response) {
         setRooms(Array.isArray(response) ? response : response.metaData || []);

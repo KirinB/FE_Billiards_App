@@ -1,54 +1,57 @@
 import axiosInstance from "@/lib/axios";
-import type { CreateRoomDto, RoomResponse } from "@/types/room.type";
+import type {
+  CreateRoomDto,
+  RoomResponse,
+  UpdateScoreDto,
+} from "@/types/room.type";
 
 const API_URL = "/rooms";
 
-export interface UpdateScoreDto {
-  roomId: string;
-  pin: string;
-  winnerId?: string; // Dùng cho BIDA_1VS1
-  currentPlayerId?: string; // Dùng cho BIDA_DIEM_DEN
-  loserIds?: string[]; // Dùng cho BIDA_DIEM_DEN
-  events?: { bi: number; count: number }[]; // Dùng cho BIDA_DIEM_DEN
-}
-
 export const RoomService = {
-  getAll: async () => {
-    const response = await axiosInstance.get(API_URL);
-    return response.data;
+  // ===== GET ALL ROOMS =====
+  getAll: async (): Promise<RoomResponse[]> => {
+    const res = await axiosInstance.get<RoomResponse[]>(API_URL);
+    return res.data;
   },
 
+  // ===== CREATE ROOM =====
   create: async (payload: CreateRoomDto): Promise<RoomResponse> => {
-    const response = await axiosInstance.post<RoomResponse>(API_URL, payload);
-    return response.data;
+    const res = await axiosInstance.post<RoomResponse>(API_URL, payload);
+    return res.data;
   },
 
-  getById: async (id: string, pin: string) => {
-    const res = await axiosInstance.get(`${API_URL}/${id}`, {
+  // ===== GET ROOM BY ID + PIN =====
+  getById: async (id: string, pin: string): Promise<RoomResponse> => {
+    const res = await axiosInstance.get<RoomResponse>(`${API_URL}/${id}`, {
       params: { pin },
     });
     return res.data;
   },
-  updateScore: async (payload: UpdateScoreDto) => {
-    const response = await axiosInstance.patch(`${API_URL}`, payload);
-    return response.data;
+
+  // ===== UPDATE SCORE =====
+  updateScore: async (payload: UpdateScoreDto): Promise<RoomResponse> => {
+    const res = await axiosInstance.patch<RoomResponse>(API_URL, payload);
+    return res.data;
   },
 
+  // ===== UNDO SCORE =====
   undoScore: async (payload: {
     roomId: string;
     historyId: string;
     pin: string;
-  }) => {
-    const response = await axiosInstance.delete(`${API_URL}/undo`, {
+  }): Promise<RoomResponse> => {
+    const res = await axiosInstance.delete<RoomResponse>(`${API_URL}/undo`, {
       data: payload,
     });
-    return response.data;
+    return res.data;
   },
 
-  finish: async (roomId: string, pin: string) => {
-    const response = await axiosInstance.post(`${API_URL}/${roomId}/finish`, {
-      pin,
-    });
-    return response.data;
+  // ===== FINISH ROOM =====
+  finish: async (roomId: string, pin: string): Promise<RoomResponse> => {
+    const res = await axiosInstance.post<RoomResponse>(
+      `${API_URL}/${roomId}/finish`,
+      { pin }
+    );
+    return res.data;
   },
 };

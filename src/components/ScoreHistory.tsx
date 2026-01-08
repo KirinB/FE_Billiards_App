@@ -78,10 +78,7 @@ const ScoreHistory: React.FC<ScoreHistoryProps> = ({
         pin: savedPin || "",
       });
 
-      // Bóc tách data trước khi gọi onUpdateRoom để đồng bộ state cha
-      const newData =
-        response.data?.room || response.room || response.data || response;
-      onUpdateRoom(newData);
+      onUpdateRoom(response);
       toast.success("Đã hoàn tác điểm số");
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Không thể hoàn tác");

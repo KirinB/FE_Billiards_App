@@ -21,18 +21,17 @@ jobs:
           port: ${{ secrets.REMOTE_PORT }}
           script: |
             cd ${{ secrets.TARGET_DIR }}
-
-
             git fetch --all
             git reset --hard origin/main
 
-            # 3. Cài đặt thư viện
+            # Cài đặt và build
             npm install
-
-            # 4. Bước quan trọng: Build dự án
-            # Lệnh này sẽ tạo ra thư mục 'dist' hoặc 'build'
             npm run build
 
-            # 5. Di chuyển nội dung build đến thư mục phục vụ bởi Nginx
-            sudo systemctl reload nginx
-            echo "Build Frontend hoàn tất!"
+            # Kiểm tra xem thư mục dist có tồn tại không để tránh lỗi Nginx 404
+            if [ -d "dist" ]; then
+              echo "Build thành công, Nginx sẽ tự nhận file mới."
+            else
+              echo "Build thất bại!"
+              exit 1
+            fi

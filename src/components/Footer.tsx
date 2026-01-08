@@ -1,10 +1,18 @@
 import { cn } from "@/lib/utils";
-import { Home, MessageCircle } from "lucide-react";
+import type { RootState } from "@/store/store";
+import {
+  HeartHandshakeIcon,
+  Home,
+  MessageCircle,
+  User2Icon,
+} from "lucide-react";
+import { useSelector } from "react-redux";
 import { useLocation, useNavigate } from "react-router-dom";
 
 const Footer = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const user = useSelector((state: RootState) => state.user);
 
   const items = [
     {
@@ -16,6 +24,16 @@ const Footer = () => {
       label: "Liên Hệ",
       icon: MessageCircle,
       path: "/contact",
+    },
+    {
+      label: "FAQ",
+      icon: HeartHandshakeIcon,
+      path: "/faq",
+    },
+    {
+      label: user.id ? "Hồ Sơ" : "Đăng Nhập",
+      icon: User2Icon,
+      path: user.id ? "/profile" : "/login",
     },
     // {
     //   label: "Cài đặt",

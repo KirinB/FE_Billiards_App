@@ -6,11 +6,12 @@ const axiosInstance = axios.create({
   headers: {
     "Content-Type": "application/json",
   },
+  withCredentials: true,
 });
 
-// Interceptor để lấy thẳng metaData cho khỏe
+// Interceptor để lấy thẳng data cho khỏe
 axiosInstance.interceptors.response.use(
-  (response) => response,
+  (response) => response.data,
   (error) => Promise.reject(error)
 );
 

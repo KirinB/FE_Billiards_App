@@ -11,6 +11,7 @@ import ScoreHistory from "../ScoreHistory";
 import imgBi3 from "@/assets/bi3.png";
 import imgBi6 from "@/assets/bi6.png";
 import imgBi9 from "@/assets/bi9.png";
+import { useFinishRoom } from "@/hooks/useFinishRoom";
 
 export type BiKey = 3 | 6 | 9;
 const BI_KEYS: readonly BiKey[] = [3, 6, 9] as const;
@@ -88,26 +89,28 @@ export const BidaPenaltyView: React.FC<Props> = ({
     }
   };
 
-  const handleFinishGame = async () => {
-    const pinKey = `room_pin_${room.id}`;
-    const savedPin = localStorage.getItem(pinKey);
+  // const handleFinishGame = async () => {
+  //   const pinKey = `room_pin_${room.id}`;
+  //   const savedPin = localStorage.getItem(pinKey);
 
-    if (
-      !confirm(
-        "Xác nhận kết thúc ván đấu? Dữ liệu sẽ được lưu và dọn dẹp bộ nhớ PIN."
-      )
-    )
-      return;
+  //   if (
+  //     !confirm(
+  //       "Xác nhận kết thúc ván đấu? Dữ liệu sẽ được lưu và dọn dẹp bộ nhớ PIN."
+  //     )
+  //   )
+  //     return;
 
-    try {
-      await RoomService.finish(room.id, savedPin || "");
-      localStorage.removeItem(pinKey);
-      toast.success("Đã kết thúc và xóa mã PIN lưu trữ!");
-      navigate("/");
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || "Lỗi khi kết thúc");
-    }
-  };
+  //   try {
+  //     await RoomService.finish(room.id, savedPin || "");
+  //     localStorage.removeItem(pinKey);
+  //     toast.success("Đã kết thúc và xóa mã PIN lưu trữ!");
+  //     navigate("/");
+  //   } catch (err: any) {
+  //     toast.error(err.response?.data?.message || "Lỗi khi kết thúc");
+  //   }
+  // };
+
+  const { finishRoom } = useFinishRoom(room.id);
 
   const achievements = useMemo(() => {
     const stats = {
@@ -261,7 +264,7 @@ export const BidaPenaltyView: React.FC<Props> = ({
           <Button
             variant="ghost"
             className="w-full rounded-xl h-10 border border-red-500/20 bg-red-500/5 text-red-400/60 hover:text-red-400 text-[10px] font-bold uppercase tracking-widest"
-            onClick={handleFinishGame}
+            onClick={() => finishRoom("Xác nhận kết thúc ván đấu?")}
           >
             <LogOut size={14} className="mr-2" /> KẾT THÚC VÁN ĐẤU
           </Button>

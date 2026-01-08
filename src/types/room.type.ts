@@ -1,4 +1,4 @@
-// Dữ liệu gửi lên (Request Body)
+// ===== CREATE ROOM =====
 export interface CreateRoomDto {
   name: string;
   pin: string;
@@ -9,7 +9,7 @@ export interface CreateRoomDto {
   valBi9?: number;
 }
 
-// Dữ liệu người chơi (Player lồng trong Response)
+// ===== PLAYER =====
 export interface Player {
   id: number;
   name: string;
@@ -19,19 +19,42 @@ export interface Player {
   updatedAt: string;
 }
 
-// Dữ liệu phòng trả về (Response Data)
+// ===== HISTORY (nên tách riêng, tạm basic) =====
+export interface RoomHistory {
+  id: string;
+  type: string;
+  payload: any;
+  createdAt: string;
+}
+
+// ===== ROOM RESPONSE =====
 export interface RoomResponse {
   id: number;
   name: string;
-  pin: string;
   type: "BIDA_DIEM_DEN" | "BIDA_1VS1";
   isFinished: boolean;
+
   valBi3: number;
   valBi6: number;
   valBi9: number;
+
   version: number;
   createdAt: string;
   updatedAt: string;
+
   players: Player[];
-  history: any[]; // Thay 'any' bằng interface History nếu có
+  history: RoomHistory[];
+}
+
+export interface UpdateScoreDto {
+  roomId: string;
+  pin: string;
+
+  // 1vs1
+  winnerId?: string;
+
+  // điểm đến
+  currentPlayerId?: string;
+  loserIds?: string[];
+  events?: { bi: number; count: number }[];
 }

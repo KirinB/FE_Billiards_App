@@ -1,7 +1,6 @@
 import { useParams, useNavigate } from "react-router-dom";
 import { useEffect, useState } from "react";
 import { RoomService } from "@/services/room.service";
-import { socket } from "@/services/socket";
 import { Loader2, Lock, Trophy, Eye } from "lucide-react";
 import { BidaSoloView } from "@/components/View/BidaSolo";
 import { BidaPenaltyView } from "@/components/View/BidaPenaltyView";
@@ -11,6 +10,7 @@ import {
   InputOTPSlot,
 } from "@/components/ui/input-otp";
 import { toast } from "sonner";
+import { connectSocket, disconnectSocket } from "@/services/socket";
 
 export const RoomPage = () => {
   const { roomId } = useParams();
@@ -21,32 +21,53 @@ export const RoomPage = () => {
   const [pin, setPin] = useState("");
   const [loading, setLoading] = useState(false);
 
-  // 1. Quản lý kết nối Socket.io
+  // // 1. Quản lý kết nối Socket.io
+  // useEffect(() => {
+  //   if (isAuthorized && roomId) {
+  //     socket.emit("join_room", roomId);
+
+  //     socket.on("room_updated", (response: any) => {
+  //       console.log("Dữ liệu mới nhận được qua Socket:", response);
+  //       const cleanData =
+  //         response?.data?.room || response?.room || response?.data || response;
+  //       setRoom(cleanData);
+
+  //       if (navigator.vibrate) navigator.vibrate(50);
+  //     });
+
+  //     socket.on("room_finished", () => {
+  //       toast.info("Ván đấu đã kết thúc!");
+  //       localStorage.removeItem(`room_pin_${roomId}`);
+  //       navigate("/");
+  //     });
+  //   }
+
+  //   return () => {
+  //     socket.off("room_updated");
+  //     socket.off("room_finished");
+  //   };
+  // }, [isAuthorized, roomId, navigate]);
   useEffect(() => {
-    if (isAuthorized && roomId) {
-      socket.emit("join_room", roomId);
+    if (!isAuthorized || !roomId) return;
 
-      socket.on("room_updated", (response: any) => {
-        console.log("Dữ liệu mới nhận được qua Socket:", response);
-        const cleanData =
-          response?.data?.room || response?.room || response?.data || response;
-        setRoom(cleanData);
+    const socket = connectSocket();
 
-        if (navigator.vibrate) navigator.vibrate(50);
-      });
+    socket.emit("join_room", roomId);
 
-      socket.on("room_finished", () => {
-        toast.info("Ván đấu đã kết thúc!");
-        localStorage.removeItem(`room_pin_${roomId}`);
-        navigate("/");
-      });
-    }
+    socket.on("room_updated", (payload) => {
+      setRoom(payload?.room ?? payload);
+    });
+
+    socket.on("room_finished", () => {
+      navigate("/");
+    });
 
     return () => {
       socket.off("room_updated");
       socket.off("room_finished");
+      disconnectSocket();
     };
-  }, [isAuthorized, roomId, navigate]);
+  }, [isAuthorized, roomId]);
 
   // 2. Tự động kiểm tra nếu đã có PIN trong localStorage
   useEffect(() => {
@@ -63,7 +84,19 @@ export const RoomPage = () => {
     try {
       setLoading(true);
       const res = await RoomService.getById(roomId!, pinToUse);
-      setRoom(res.room);
+
+      // 🔥 PHÒNG ĐÃ KẾT THÚC
+      if (res?.isFinished) {
+        setRoom(res);
+        setIsViewer(true);
+        setIsAuthorized(true);
+
+        toast.info("Ván đấu này đã kết thúc. Bạn đang xem kết quả.");
+        return;
+      }
+
+      // PHÒNG ĐANG CHƠI
+      setRoom(res);
       localStorage.setItem(`room_pin_${roomId}`, pinToUse);
       setIsAuthorized(true);
       setIsViewer(false);
@@ -80,7 +113,12 @@ export const RoomPage = () => {
     try {
       setLoading(true);
       const res = await RoomService.getById(roomId!, "");
-      setRoom(res.room || res);
+
+      if (res?.isFinished) {
+        toast.info("Ván đấu đã kết thúc. Đang hiển thị kết quả.");
+      }
+
+      setRoom(res);
       setIsViewer(true);
       setIsAuthorized(true);
     } catch (err) {
@@ -107,7 +145,7 @@ export const RoomPage = () => {
       if (navigator.vibrate) navigator.vibrate(50);
     } catch (err: any) {
       console.error("Lỗi cập nhật điểm:", err.message);
-      toast.error("Không thể cập nhật điểm");
+      toast.error(err.response?.data?.message || "Lỗi khi cập nhật điểm");
     }
   };
 

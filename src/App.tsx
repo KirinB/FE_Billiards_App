@@ -3,6 +3,9 @@ import HomePage from "./pages/HomePage";
 import MainLayout from "./layouts/MainLayout";
 import Contact from "./pages/ContactPage";
 import { RoomPage } from "./pages/RoomDetail";
+import FaqPage from "./pages/FaqPage";
+import LoginPage from "./pages/LoginPage";
+import NotFoundPage from "./pages/NotFoundPage";
 
 function App() {
   return (
@@ -13,12 +16,14 @@ function App() {
           <Route path="/" element={<MainLayout />}>
             <Route path="/" element={<HomePage />} />
             <Route path="/contact" element={<Contact />} />
-            <Route path="room/:roomId" element={<RoomPage />} />
+            <Route path="/room/:roomId" element={<RoomPage />} />
+            <Route path="/faq" element={<FaqPage />} />
+            <Route path="/login" element={<LoginPage />} />
+            <Route path="*" element={<NotFoundPage />} />
           </Route>
 
           {/* Trang chi tiết bàn bida cụ thể */}
           {/* <Route path="/room/:roomId" element={<RoomDetail />} /> */}
-          <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </div>
     </BrowserRouter>

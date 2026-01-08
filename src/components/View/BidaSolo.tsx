@@ -1,9 +1,7 @@
+import { useFinishRoom } from "@/hooks/useFinishRoom";
 import { cn } from "@/lib/utils";
-import { RoomService } from "@/services/room.service";
-import { KeyRound, LogOut, Trophy, User, RotateCcw, Eye } from "lucide-react";
+import { Eye, KeyRound, LogOut, RotateCcw, Trophy, User } from "lucide-react";
 import { useMemo } from "react";
-import { useNavigate } from "react-router-dom";
-import { toast } from "sonner";
 
 export const BidaSoloView = ({
   room,
@@ -16,7 +14,7 @@ export const BidaSoloView = ({
   onUpdateScore?: (playerId: string) => void;
   onUndo?: () => void;
 }) => {
-  const navigate = useNavigate();
+  // const navigate = useNavigate();
 
   const players = useMemo(() => {
     return [...(room?.players || [])].sort((a, b) => a.id - b.id);
@@ -29,24 +27,26 @@ export const BidaSoloView = ({
     }
   };
 
-  const handleFinishGame = async () => {
-    const pinKey = `room_pin_${room.id}`;
-    const savedPin = localStorage.getItem(pinKey);
+  const { finishRoom } = useFinishRoom(room.id);
 
-    if (
-      !confirm("Xác nhận kết thúc ván đấu? Phòng sẽ đóng và xóa PIN hoàn toàn.")
-    )
-      return;
+  // const handleFinishGame = async () => {
+  //   const pinKey = `room_pin_${room.id}`;
+  //   const savedPin = localStorage.getItem(pinKey);
 
-    try {
-      await RoomService.finish(room.id, savedPin || "");
-      localStorage.removeItem(pinKey);
-      toast.success("Ván đấu đã kết thúc!");
-      navigate("/");
-    } catch (err: any) {
-      toast.error(err.response?.data?.message || "Lỗi khi kết thúc ván");
-    }
-  };
+  //   if (
+  //     !confirm("Xác nhận kết thúc ván đấu? Phòng sẽ đóng và xóa PIN hoàn toàn.")
+  //   )
+  //     return;
+
+  //   try {
+  //     await RoomService.finish(room.id, savedPin || "");
+  //     localStorage.removeItem(pinKey);
+  //     toast.success("Ván đấu đã kết thúc!");
+  //     navigate("/");
+  //   } catch (err: any) {
+  //     toast.error(err.response?.data?.message || "Lỗi khi kết thúc ván");
+  //   }
+  // };
 
   const scoreDiff = useMemo(() => {
     if (players.length < 2) return 0;
@@ -179,7 +179,7 @@ export const BidaSoloView = ({
 
               {/* Nút Kết thúc (Màu Đỏ để cảnh báo) */}
               <button
-                onClick={handleFinishGame}
+                onClick={() => finishRoom("Xác nhận kết thúc ván đấu?")}
                 className="aspect-square bg-red-500/10 border border-red-500/20 rounded-[28px] flex flex-col items-center justify-center gap-2 active:scale-95 transition-all text-red-500 group"
               >
                 <div className="p-3 bg-red-500/10 rounded-full group-active:bg-red-500/20 transition-colors">

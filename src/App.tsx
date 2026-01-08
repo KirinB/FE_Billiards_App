@@ -1,11 +1,11 @@
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
-import HomePage from "./pages/HomePage";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
 import MainLayout from "./layouts/MainLayout";
 import Contact from "./pages/ContactPage";
-import { RoomPage } from "./pages/RoomDetail";
 import FaqPage from "./pages/FaqPage";
+import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
 import NotFoundPage from "./pages/NotFoundPage";
+import { RoomPage } from "./pages/RoomDetail";
 
 function App() {
   return (

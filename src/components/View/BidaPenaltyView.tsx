@@ -1,11 +1,10 @@
-import React, { useState, useMemo } from "react";
-import { RoomService } from "@/services/room.service";
+import { PlayerScoreRow } from "@/components/PlayerScoreRow";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { RoomService } from "@/services/room.service";
+import { LogOut, Minus, Plus, Swords } from "lucide-react";
+import React, { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { Swords, Minus, Plus, LogOut } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { PlayerScoreRow } from "@/components/PlayerScoreRow";
 import ScoreHistory from "../ScoreHistory";
 
 import imgBi3 from "@/assets/bi3.png";
@@ -28,7 +27,6 @@ export const BidaPenaltyView: React.FC<Props> = ({
   onUpdateRoom,
   isReadOnly,
 }) => {
-  const navigate = useNavigate();
   const [currentPlayerId, setCurrentPlayerId] = useState<string | null>(null);
   const [biCounts, setBiCounts] = useState<Record<BiKey, number>>({
     3: 0,

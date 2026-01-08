@@ -21,17 +21,17 @@ jobs:
           port: ${{ secrets.REMOTE_PORT }}
           script: |
             cd ${{ secrets.TARGET_DIR }}
+            set -e  # CỰC KỲ QUAN TRỌNG: Dừng ngay nếu có bất kỳ lệnh nào lỗi
+
             git fetch --all
             git reset --hard origin/main
 
-            # Cài đặt và build
             npm install
+
+            # Xóa thư mục dist cũ để đảm bảo nếu build lỗi thì không dùng lại bản cũ
+            rm -rf dist 
+
+            # Lệnh này nếu lỗi (do TS) thì script sẽ dừng và GitHub báo Đỏ (Fail)
             npm run build
 
-            # Kiểm tra xem thư mục dist có tồn tại không để tránh lỗi Nginx 404
-            if [ -d "dist" ]; then
-              echo "Build thành công, Nginx sẽ tự nhận file mới."
-            else
-              echo "Build thất bại!"
-              exit 1
-            fi
+            echo "Build Frontend hoàn tất và thư mục dist đã được cập nhật!"

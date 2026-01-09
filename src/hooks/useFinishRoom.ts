@@ -6,11 +6,9 @@ import { disconnectSocket } from "@/services/socket";
 export const useFinishRoom = (roomId: string) => {
   const navigate = useNavigate();
 
-  const finishRoom = async (confirmText?: string) => {
+  const finishRoom = async () => {
     const pinKey = `room_pin_${roomId}`;
     const pin = localStorage.getItem(pinKey);
-
-    if (!confirm(confirmText || "Xác nhận kết thúc ván đấu?")) return;
 
     try {
       await RoomService.finish(roomId, pin || "");

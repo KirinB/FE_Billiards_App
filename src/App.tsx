@@ -12,7 +12,6 @@ function App() {
     <BrowserRouter>
       <div className="min-h-screen bg-slate-50">
         <Routes>
-          {/* Trang danh sách phòng */}
           <Route path="/" element={<MainLayout />}>
             <Route path="/" element={<HomePage />} />
             <Route path="/contact" element={<Contact />} />
@@ -21,9 +20,6 @@ function App() {
             <Route path="/login" element={<LoginPage />} />
             <Route path="*" element={<NotFoundPage />} />
           </Route>
-
-          {/* Trang chi tiết bàn bida cụ thể */}
-          {/* <Route path="/room/:roomId" element={<RoomDetail />} /> */}
         </Routes>
       </div>
     </BrowserRouter>

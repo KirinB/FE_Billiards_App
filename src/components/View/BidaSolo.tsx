@@ -2,6 +2,18 @@ import { useFinishRoom } from "@/hooks/useFinishRoom";
 import { cn } from "@/lib/utils";
 import { Eye, KeyRound, LogOut, RotateCcw, Trophy, User } from "lucide-react";
 import { useMemo } from "react";
+import { Button } from "../ui/button";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "../ui/alert-dialog";
 
 export const BidaSoloView = ({
   room,
@@ -20,11 +32,9 @@ export const BidaSoloView = ({
     return [...(room?.players || [])].sort((a, b) => a.id - b.id);
   }, [room?.players]);
 
-  const handleChangePin = () => {
-    if (confirm("Bạn muốn đăng xuất và đổi mã PIN khác?")) {
-      localStorage.removeItem(`room_pin_${room.id}`);
-      window.location.reload();
-    }
+  const handleConfirmChangePin = () => {
+    localStorage.removeItem(`room_pin_${room.id}`);
+    window.location.reload();
   };
 
   const { finishRoom } = useFinishRoom(room.id);
@@ -59,7 +69,7 @@ export const BidaSoloView = ({
 
   return (
     <div className="flex flex-col h-full space-y-4 animate-in fade-in duration-500">
-      {/* Container chính: 1 cột cho mobile, 2 cột cho iPad/Desktop */}
+      {/* GRID PLAYERS */}
       <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-4 min-h-0">
         {players.map((player: any, index: number) => (
           <div
@@ -75,7 +85,6 @@ export const BidaSoloView = ({
             )}
             onClick={() => !isReadOnly && onUpdateScore?.(player.id)}
           >
-            {/* Icon làm nền */}
             <Trophy
               className={cn(
                 "absolute -right-10 -bottom-10 opacity-5 rotate-12",
@@ -106,7 +115,6 @@ export const BidaSoloView = ({
                 </div>
               </div>
 
-              {/* Điểm số cực to */}
               <div className="mt-4 text-center md:text-right">
                 <div
                   className={cn(
@@ -125,7 +133,7 @@ export const BidaSoloView = ({
         ))}
       </div>
 
-      {/* FOOTER ACTIONS - TỐI ƯU CHO MOBILE */}
+      {/* FOOTER ACTIONS */}
       <div className="shrink-0 pt-2 pb-8 space-y-3">
         {/* Chỉ số tổng hợp */}
         <div className="w-full bg-white/5 border border-white/10 rounded-[28px] p-5 flex justify-around items-center backdrop-blur-sm">
@@ -144,51 +152,125 @@ export const BidaSoloView = ({
           </div>
         </div>
 
-        {/* Các nút bấm chính */}
+        {/* CÁC NÚT BẤM DÙNG SHADCN BUTTON */}
         <div className="grid grid-cols-3 gap-3">
           {!isReadOnly ? (
             <>
-              {/* Nút Hoàn tác (Undo) */}
-              <button
+              {/* Nút Hoàn tác */}
+              {/* <Button
+                variant="ghost"
                 onClick={(e) => {
                   e.stopPropagation();
                   onUndo?.();
                 }}
-                className="aspect-square bg-white/5 border border-white/10 rounded-[28px] flex flex-col items-center justify-center gap-2 active:scale-95 transition-all text-[#a8c5bb] group"
+                className="h-auto aspect-square bg-white/5 border border-white/10 rounded-[28px] flex flex-col items-center justify-center gap-2 hover:bg-white/10 hover:text-white transition-all text-[#a8c5bb]"
               >
-                <div className="p-3 bg-white/5 rounded-full group-active:bg-white/10 transition-colors">
+                <div className="p-3 bg-white/5 rounded-full">
                   <RotateCcw size={24} />
                 </div>
                 <span className="text-[10px] font-black uppercase tracking-tighter">
                   Hoàn tác
                 </span>
-              </button>
+              </Button> */}
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    disabled={isReadOnly}
+                    // Giữ lại class layout để nút này vẫn là hình vuông trong grid
+                    className="h-auto aspect-square bg-white/5 border border-white/10 rounded-[28px] flex flex-col items-center justify-center gap-2 hover:bg-white/10 transition-all text-[#a8c5bb]"
+                  >
+                    <div className="p-3 bg-white/5 rounded-full">
+                      <RotateCcw size={24} />
+                    </div>
+                    <span className="text-[10px] font-black uppercase tracking-tighter">
+                      Hoàn tác
+                    </span>
+                  </Button>
+                </AlertDialogTrigger>
 
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Xác nhận hoàn tác?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Bạn có chắc chắn muốn xóa kết quả của ván đấu vừa rồi
+                      không? Hành động này không thể hoàn tác.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Hủy</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => onUndo?.()}>
+                      Xác nhận xóa
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
               {/* Nút Mã PIN */}
-              <button
-                onClick={handleChangePin}
-                className="aspect-square bg-white/5 border border-white/10 rounded-[28px] flex flex-col items-center justify-center gap-2 active:scale-95 transition-all text-[#a8c5bb] group"
-              >
-                <div className="p-3 bg-white/5 rounded-full group-active:bg-white/10 transition-colors">
-                  <KeyRound size={24} />
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-tighter">
-                  Mã PIN
-                </span>
-              </button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className="h-auto aspect-square bg-white/5 border border-white/10 rounded-[28px] flex flex-col items-center justify-center gap-2 hover:bg-white/10 transition-all text-[#a8c5bb]"
+                  >
+                    <div className="p-3 bg-white/5 rounded-full">
+                      <KeyRound size={24} />
+                    </div>
+                    <span className="text-[10px] font-black uppercase tracking-tighter">
+                      Mã PIN
+                    </span>
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Đăng xuất & Đổi PIN?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Bạn sẽ được đăng xuất khỏi bàn này để nhập mã PIN khác.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Hủy</AlertDialogCancel>
+                    <AlertDialogAction onClick={handleConfirmChangePin}>
+                      Đăng xuất
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
 
-              {/* Nút Kết thúc (Màu Đỏ để cảnh báo) */}
-              <button
-                onClick={() => finishRoom("Xác nhận kết thúc ván đấu?")}
-                className="aspect-square bg-red-500/10 border border-red-500/20 rounded-[28px] flex flex-col items-center justify-center gap-2 active:scale-95 transition-all text-red-500 group"
-              >
-                <div className="p-3 bg-red-500/10 rounded-full group-active:bg-red-500/20 transition-colors">
-                  <LogOut size={24} />
-                </div>
-                <span className="text-[10px] font-black uppercase tracking-tighter">
-                  Kết thúc
-                </span>
-              </button>
+              {/* Nút Kết thúc */}
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="destructive"
+                    className="h-auto aspect-square bg-red-500/10 border border-red-500/20 rounded-[28px] flex flex-col items-center justify-center gap-2 hover:bg-red-500/20 text-red-500 transition-all"
+                  >
+                    <div className="p-3 bg-red-500/10 rounded-full">
+                      <LogOut size={24} />
+                    </div>
+                    <span className="text-[10px] font-black uppercase tracking-tighter">
+                      Kết thúc
+                    </span>
+                  </Button>
+                </AlertDialogTrigger>
+
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Kết thúc ván đấu?</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Xác nhận kết thúc ván đấu? Phòng sẽ đóng và mã PIN sẽ được
+                      xóa hoàn toàn khỏi thiết bị này.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Hủy</AlertDialogCancel>
+                    <AlertDialogAction
+                      onClick={() => finishRoom()}
+                      className="bg-red-600 hover:bg-red-700"
+                    >
+                      Kết thúc ngay
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
             </>
           ) : (
             <div className="col-span-3 bg-white/5 border border-white/5 rounded-[28px] py-6 flex items-center justify-center gap-3">

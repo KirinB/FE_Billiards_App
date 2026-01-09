@@ -11,6 +11,17 @@ import imgBi3 from "@/assets/bi3.png";
 import imgBi6 from "@/assets/bi6.png";
 import imgBi9 from "@/assets/bi9.png";
 import { useFinishRoom } from "@/hooks/useFinishRoom";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "../ui/alert-dialog";
 
 export type BiKey = 3 | 6 | 9;
 const BI_KEYS: readonly BiKey[] = [3, 6, 9] as const;
@@ -259,13 +270,35 @@ export const BidaPenaltyView: React.FC<Props> = ({
             </Button>
           </div>
 
-          <Button
-            variant="ghost"
-            className="w-full rounded-xl h-10 border border-red-500/20 bg-red-500/5 text-red-400/60 hover:text-red-400 text-[10px] font-bold uppercase tracking-widest"
-            onClick={() => finishRoom("Xác nhận kết thúc ván đấu?")}
-          >
-            <LogOut size={14} className="mr-2" /> KẾT THÚC VÁN ĐẤU
-          </Button>
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <Button
+                variant="ghost"
+                className="w-full rounded-xl h-10 border border-red-500/20 bg-red-500/5 text-red-400/60 hover:text-red-400 text-[10px] font-bold uppercase tracking-widest"
+              >
+                <LogOut size={14} className="mr-2" /> KẾT THÚC VÁN ĐẤU
+              </Button>
+            </AlertDialogTrigger>
+
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Kết thúc ván đấu?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Xác nhận kết thúc ván đấu? Toàn bộ dữ liệu điểm đền sẽ được
+                  chốt và mã PIN sẽ bị xóa khỏi máy.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Hủy</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => finishRoom()}
+                  className="bg-red-600 hover:bg-red-700"
+                >
+                  Xác nhận kết thúc
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       )}
     </div>

@@ -1,7 +1,7 @@
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams } from "react-router-dom";
 import { useEffect, useState, useCallback } from "react";
 import { RoomService } from "@/services/room.service";
-import { Loader2, Lock, Trophy, Eye } from "lucide-react";
+import { Loader2, Lock, Eye, QrCode } from "lucide-react"; // Đổi Trophy thành QrCode
 import { BidaSoloView } from "@/components/View/BidaSolo";
 import { BidaPenaltyView } from "@/components/View/BidaPenaltyView";
 import {
@@ -9,17 +9,29 @@ import {
   InputOTPGroup,
   InputOTPSlot,
 } from "@/components/ui/input-otp";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { connectSocket } from "@/services/socket";
+import { QRCodeSVG } from "qrcode.react";
 
 export const RoomPage = () => {
   const { roomId } = useParams();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const [room, setRoom] = useState<any>(null);
   const [isAuthorized, setIsAuthorized] = useState(false);
   const [isViewer, setIsViewer] = useState(false);
   const [pin, setPin] = useState("");
   const [loading, setLoading] = useState(false);
+
+  // Lấy Base URL từ biến môi trường VITE
+  const APP_URL = import.meta.env.VITE_APP_URL || window.location.origin;
 
   // --- HÀM TẢI DỮ LIỆU (Dùng chung) ---
   const loadRoomData = useCallback(
@@ -67,14 +79,11 @@ export const RoomPage = () => {
       console.log("Socket connected/reconnected");
       socket.emit("join_room", roomId);
 
-      // Khi kết nối lại, âm thầm lấy dữ liệu mới nhất để tránh lệch sync
       const savedPin = localStorage.getItem(`room_pin_${roomId}`) || "";
       loadRoomData(savedPin, true);
     };
 
     socket.on("connect", handleConnect);
-
-    // Nếu socket đã kết nối sẵn từ trước, gọi thủ công lần đầu
     if (socket.connected) handleConnect();
 
     socket.on("room_updated", (payload) => {
@@ -92,7 +101,6 @@ export const RoomPage = () => {
       socket.off("connect", handleConnect);
       socket.off("room_updated");
       socket.off("room_finished");
-      // Lưu ý: Không nên gọi disconnectSocket() ở đây nếu muốn giữ kết nối xuyên suốt ứng dụng
     };
   }, [isAuthorized, roomId, loadRoomData, navigate]);
 
@@ -111,14 +119,24 @@ export const RoomPage = () => {
     };
   }, [isAuthorized, roomId, loadRoomData]);
 
-  // --- 3. KIỂM TRA PIN BAN ĐẦU ---
+  // --- 3. KIỂM TRA PIN TỪ URL HOẶC LOCAL STORAGE ---
   useEffect(() => {
+    const pinFromUrl = searchParams.get("pin");
     const savedPin = localStorage.getItem(`room_pin_${roomId}`);
-    if (savedPin) {
-      setPin(savedPin);
-      loadRoomData(savedPin);
+
+    // Ưu tiên PIN từ URL để tự động đăng nhập khi quét QR
+    const activePin = pinFromUrl || savedPin;
+
+    if (activePin) {
+      setPin(activePin);
+      loadRoomData(activePin);
+
+      // Nếu là PIN từ URL, dọn dẹp URL cho đẹp sau khi dùng
+      if (pinFromUrl) {
+        navigate(`/room/${roomId}`, { replace: true });
+      }
     }
-  }, [roomId, loadRoomData]);
+  }, [roomId, loadRoomData, searchParams, navigate]);
 
   // --- CÁC HÀM ACTION ---
   const handleJoinAsViewer = async () => {
@@ -162,7 +180,6 @@ export const RoomPage = () => {
     if (!savedPin) return toast.error("Vui lòng nhập lại mã PIN");
     if (!lastHistoryEntry)
       return toast.error("Không còn ván đấu nào để hoàn tác!");
-    if (!confirm(`Bạn muốn xóa kết quả ván vừa rồi?`)) return;
 
     try {
       setLoading(true);
@@ -172,7 +189,6 @@ export const RoomPage = () => {
         pin: savedPin,
       });
       toast.success("Đã hoàn tác điểm số thành công");
-      // Sau khi undo thành công, loadRoomData sẽ giúp sync lại toàn bộ máy
       loadRoomData(savedPin, true);
     } catch (err: any) {
       toast.error(err.response?.data?.message || "Lỗi khi hoàn tác");
@@ -181,7 +197,7 @@ export const RoomPage = () => {
     }
   };
 
-  // --- RENDER GIAO DIỆN ---
+  // --- RENDER GIAO DIỆN KHÓA PIN ---
   if (!isAuthorized) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[100dvh] px-6 text-center">
@@ -253,9 +269,56 @@ export const RoomPage = () => {
             )}
           </div>
         </div>
-        <div className="bg-white/5 p-3 rounded-2xl border border-white/5">
-          <Trophy className="text-[#f2c94c] size-6" />
-        </div>
+
+        {/* DIALOG HIỂN THỊ QR CODE */}
+        <Dialog>
+          <DialogTrigger asChild>
+            <button className="bg-white/5 p-3 rounded-2xl border border-white/5 active:scale-90 transition-all">
+              <QrCode className="text-[#f2c94c] size-6" />
+            </button>
+          </DialogTrigger>
+          <DialogContent className="bg-[#0d211a] border-white/10 text-white rounded-[32px] sm:max-w-md flex flex-col items-center p-8">
+            <DialogHeader className="items-center">
+              <DialogTitle className="text-xl font-black uppercase italic text-[#f2c94c] tracking-widest">
+                Mời cơ thủ
+              </DialogTitle>
+            </DialogHeader>
+
+            <div className="bg-white p-4 rounded-[24px] mt-6 shadow-[0_0_40px_rgba(242,201,76,0.15)]">
+              <QRCodeSVG
+                value={`${APP_URL}/room/${roomId}?pin=${localStorage.getItem(
+                  `room_pin_${roomId}`
+                )}`}
+                size={220}
+                level="H"
+              />
+            </div>
+
+            <div className="mt-8 text-center space-y-3">
+              <p className="text-[#a8c5bb] text-[10px] font-black uppercase tracking-[0.2em] opacity-60">
+                Quét để tự động vào bàn
+              </p>
+              <div className="bg-white/5 px-6 py-2 rounded-2xl border border-white/10 inline-block">
+                <span className="text-[#f2c94c] font-black tracking-[0.4em] text-xl ml-[0.4em]">
+                  {localStorage.getItem(`room_pin_${roomId}`)}
+                </span>
+              </div>
+            </div>
+
+            <button
+              onClick={() => {
+                const url = `${APP_URL}/room/${roomId}?pin=${localStorage.getItem(
+                  `room_pin_${roomId}`
+                )}`;
+                navigator.clipboard.writeText(url);
+                toast.success("Đã sao chép link mời kèm mã PIN!");
+              }}
+              className="mt-6 text-[10px] font-black uppercase text-[#a8c5bb] hover:text-[#f2c94c] transition-colors underline underline-offset-4"
+            >
+              Sao chép đường dẫn chia sẻ
+            </button>
+          </DialogContent>
+        </Dialog>
       </div>
 
       <div className="flex-1 min-h-0">

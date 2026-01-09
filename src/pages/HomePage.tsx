@@ -14,16 +14,10 @@ import CreateRoomDialog from "@/components/CreateRoomDialog";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import { toast } from "sonner"; // Hoặc bất cứ thư viện thông báo nào bạn đang dùng
-
-interface Room {
-  id: string;
-  name: string;
-  type: string;
-  updatedAt: string;
-}
+import type { RoomResponse } from "@/types/room.type";
 
 const HomePage = () => {
-  const [rooms, setRooms] = useState<Room[]>([]);
+  const [rooms, setRooms] = useState<RoomResponse[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [isRefreshing, setIsRefreshing] = useState<boolean>(false);
   const [lastFetch, setLastFetch] = useState<number>(0); // Lưu timestamp lần cuối reload
@@ -45,11 +39,11 @@ const HomePage = () => {
       if (!silent) setLoading(true);
       setIsRefreshing(true);
 
-      const response: any = await RoomService.getAll();
-      console.log(response.data);
+      const response = await RoomService.getAll();
+      // console.log(response.data);
 
       if (response) {
-        setRooms(Array.isArray(response) ? response : response.metaData || []);
+        setRooms(response);
         setLastFetch(now); // Cập nhật thời gian fetch thành công
       }
     } catch (error) {
@@ -60,7 +54,7 @@ const HomePage = () => {
     }
   };
 
-  const handleJoinRoom = (roomId: string) => {
+  const handleJoinRoom = (roomId: number) => {
     navigate(`/room/${roomId}`);
   };
 

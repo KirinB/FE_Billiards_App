@@ -11,7 +11,7 @@ const axiosInstance = axios.create({
 
 // Interceptor để lấy thẳng data cho khỏe
 axiosInstance.interceptors.response.use(
-  (response) => response.data,
+  (response) => response,
   (error) => Promise.reject(error)
 );
 

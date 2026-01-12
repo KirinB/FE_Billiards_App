@@ -20,11 +20,13 @@ export const BidaSoloView = ({
   onUpdateScore,
   isReadOnly,
   onUndo,
+  finishRoom,
 }: {
   room: any;
   isReadOnly: boolean;
   onUpdateScore?: (playerId: string) => void;
   onUndo?: () => void;
+  finishRoom: () => void;
 }) => {
   // const navigate = useNavigate();
 
@@ -36,10 +38,6 @@ export const BidaSoloView = ({
     localStorage.removeItem(`room_pin_${room.id}`);
     window.location.reload();
   };
-
-  const { finishRoom } = useFinishRoom(room.id);
-
-  // const handleFinishGame = async () => {
   //   const pinKey = `room_pin_${room.id}`;
   //   const savedPin = localStorage.getItem(pinKey);
 

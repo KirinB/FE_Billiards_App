@@ -1,4 +1,5 @@
 import axiosInstance from "@/lib/axios";
+import privateApi from "@/lib/privateApi";
 import type {
   AuthResponse,
   LoginPayload,
@@ -25,6 +26,11 @@ export const authService = {
       `${BASEURL}/register`,
       payload
     );
+    return response.data;
+  },
+
+  async getProfile() {
+    const response = await privateApi.get(`${BASEURL}/profile`);
     return response.data;
   },
 };

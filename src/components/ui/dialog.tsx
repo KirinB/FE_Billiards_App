@@ -111,6 +111,18 @@ function DialogFooter({ className, ...props }: React.ComponentProps<"div">) {
   );
 }
 
+function DialogDescription({
+  className,
+  ...props
+}: React.ComponentProps<typeof DialogPrimitive.Description>) {
+  return (
+    <DialogPrimitive.Description
+      className={cn("text-sm text-white/80 leading-relaxed", className)}
+      {...props}
+    />
+  );
+}
+
 export {
   Dialog,
   DialogClose,
@@ -121,4 +133,5 @@ export {
   DialogPortal,
   DialogTitle,
   DialogTrigger,
+  DialogDescription,
 };

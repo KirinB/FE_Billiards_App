@@ -9,7 +9,7 @@ import {
 import { cn } from "@/lib/utils";
 import { RoomService } from "@/services/room.service";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Lock, PlusCircle, Settings2, Trophy } from "lucide-react";
+import { Lock, PlusCircle, Settings2, Trophy, UserCheck } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { toast } from "sonner";
@@ -18,6 +18,8 @@ import { Input } from "./ui/input";
 import { Label } from "./ui/label";
 import { useNavigate } from "react-router-dom";
 import type { CreateRoomDto } from "@/types/room.type";
+import { useSelector } from "react-redux";
+import { type RootState } from "@/store/store";
 
 const roomFormSchema = z
   .object({
@@ -48,16 +50,21 @@ const CreateRoomDialog = ({ onSuccess }: { onSuccess?: () => void }) => {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
 
+  // Lấy thông tin user từ Redux
+  const { username, accessToken } = useSelector(
+    (state: RootState) => state.user
+  );
+
   const {
     handleSubmit,
     control,
     watch,
     setValue,
-    reset, // Thêm reset để làm sạch form mỗi lần mở
+    reset,
     formState: { errors },
   } = useForm<RoomFormValues>({
     resolver: zodResolver(roomFormSchema),
-    mode: "onSubmit", // Chỉ báo lỗi khi nhấn Submit
+    mode: "onSubmit",
     reValidateMode: "onChange",
     defaultValues: {
       name: "",
@@ -76,15 +83,20 @@ const CreateRoomDialog = ({ onSuccess }: { onSuccess?: () => void }) => {
   const selectedType = watch("type");
   const playerCount = watch("playerCount");
 
-  // Reset form khi mở Dialog để tránh lưu lại lỗi cũ hoặc dữ liệu cũ
+  // Reset form và tự động điền tên Admin nếu có
   useEffect(() => {
     if (open) {
+      const initialNames = ["", "", "", ""];
+      if (accessToken && username) {
+        initialNames[0] = username;
+      }
+
       reset({
         name: "",
         pin: "",
         type: "BIDA_DIEM_DEN",
         playerCount: 3,
-        names: ["", "", "", ""],
+        names: initialNames,
         penaltyPoints: [
           { key: 3, value: 1 },
           { key: 6, value: 2 },
@@ -92,16 +104,15 @@ const CreateRoomDialog = ({ onSuccess }: { onSuccess?: () => void }) => {
         ],
       });
     }
-  }, [open, reset]);
+  }, [open, reset, username, accessToken]);
 
-  // Xử lý chuyển đổi mode chơi (KHÔNG DÙNG TRIGGER Ở ĐÂY)
   useEffect(() => {
     if (selectedType === "BIDA_1VS1") {
       setValue("playerCount", 2);
     } else if (playerCount === 2 && selectedType === "BIDA_DIEM_DEN") {
       setValue("playerCount", 3);
     }
-  }, [selectedType, setValue]);
+  }, [selectedType, setValue, playerCount]);
 
   const onSubmit = async (values: RoomFormValues) => {
     try {
@@ -118,19 +129,15 @@ const CreateRoomDialog = ({ onSuccess }: { onSuccess?: () => void }) => {
       };
 
       const res = await RoomService.create(payload as CreateRoomDto);
-      console.log(res);
       const roomId = res.id;
       toast.success("Tạo ván đấu thành công!", { id: "create-room" });
       setOpen(false);
       if (onSuccess) onSuccess();
-      if (roomId) {
-        navigate(`/room/${roomId}`);
-      }
+      if (roomId) navigate(`/room/${roomId}?pin=${values.pin}`);
     } catch (error: any) {
       toast.error(error.response?.data?.message || "Lỗi tạo phòng", {
         id: "create-room",
       });
-      console.log(error);
     }
   };
 
@@ -156,7 +163,6 @@ const CreateRoomDialog = ({ onSuccess }: { onSuccess?: () => void }) => {
           onSubmit={handleSubmit(onSubmit)}
           className="flex-1 overflow-y-auto p-6 space-y-5"
         >
-          {/* Tên ván & PIN */}
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
               <Label className="text-[10px] uppercase font-bold text-[#a8c5bb] ml-1">
@@ -189,14 +195,13 @@ const CreateRoomDialog = ({ onSuccess }: { onSuccess?: () => void }) => {
                 render={({ field }) => (
                   <Input
                     {...field}
-                    type="tel" // Đổi sang tel để hiện bàn phím số trên mobile
+                    type="tel"
                     maxLength={4}
                     placeholder="****"
                     className="bg-white/5 border-none h-11 rounded-xl text-white text-center tracking-[0.5em] font-bold"
-                    onChange={(e) => {
-                      const val = e.target.value.replace(/\D/g, ""); // Chỉ cho nhập số
-                      field.onChange(val);
-                    }}
+                    onChange={(e) =>
+                      field.onChange(e.target.value.replace(/\D/g, ""))
+                    }
                   />
                 )}
               />
@@ -208,7 +213,6 @@ const CreateRoomDialog = ({ onSuccess }: { onSuccess?: () => void }) => {
             </div>
           </div>
 
-          {/* Chế độ chơi */}
           <div className="space-y-2">
             <Label className="text-[10px] uppercase font-bold text-[#a8c5bb] ml-1">
               Chế độ chơi
@@ -233,7 +237,6 @@ const CreateRoomDialog = ({ onSuccess }: { onSuccess?: () => void }) => {
             </div>
           </div>
 
-          {/* Danh sách người chơi */}
           <div className="space-y-3">
             <div className="flex items-center justify-between">
               <Label className="text-[10px] uppercase font-bold text-[#a8c5bb] ml-1">
@@ -273,9 +276,18 @@ const CreateRoomDialog = ({ onSuccess }: { onSuccess?: () => void }) => {
                         </span>
                         <Input
                           {...field}
+                          disabled={i === 0 && !!accessToken} // Disable P1 nếu đã login
                           placeholder={`Tên cơ thủ ${i + 1}`}
-                          className="bg-white/5 border-none h-11 pl-10 rounded-xl text-white"
+                          className={cn(
+                            "bg-white/5 border-none h-11 pl-10 rounded-xl text-white transition-all",
+                            i === 0 &&
+                              accessToken &&
+                              "bg-white/10 text-[#f2c94c] font-bold border border-[#f2c94c]/20"
+                          )}
                         />
+                        {i === 0 && accessToken && (
+                          <UserCheck className="absolute right-4 top-1/2 -translate-y-1/2 size-3 text-[#f2c94c]" />
+                        )}
                       </div>
                     )}
                   />
@@ -289,7 +301,6 @@ const CreateRoomDialog = ({ onSuccess }: { onSuccess?: () => void }) => {
             </div>
           </div>
 
-          {/* Cấu hình bi */}
           {selectedType === "BIDA_DIEM_DEN" && (
             <div className="space-y-3 pt-2">
               <Label className="text-[10px] uppercase font-bold text-[#a8c5bb] ml-1 flex items-center gap-2">

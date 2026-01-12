@@ -1,8 +1,10 @@
 import axiosInstance from "./axios";
+import { store } from "@/store/store";
+import { updateToken } from "@/store/slice/user.slice";
 
 const privateApi = axiosInstance;
 
-// 👉 Gắn accessToken nếu có
+// 1. Request Interceptor: Không đổi
 privateApi.interceptors.request.use((config) => {
   const token = localStorage.getItem("accessToken");
   if (token) {
@@ -11,16 +13,26 @@ privateApi.interceptors.request.use((config) => {
   return config;
 });
 
-// 👉 Silent refresh (BE cấp token mới)
+// 2. Response Interceptor: Sửa lại cách đọc header
 privateApi.interceptors.response.use(
   (response) => {
-    const newToken = response.headers["x-access-token"];
+    const headers = response.headers;
+    const newToken = headers ? headers["x-access-token"] : null;
+
     if (newToken) {
       localStorage.setItem("accessToken", newToken);
+      store.dispatch(updateToken({ accessToken: newToken }));
     }
-    return response.data;
+
+    // Nếu interceptor ở file axios.ts đã return response.data rồi
+    // thì ở đây response chính là data, ta trả về nó luôn
+    return response.data || response;
   },
-  (error) => Promise.reject(error)
+  (error) => {
+    if (error.response?.status === 401) {
+    }
+    return Promise.reject(error);
+  }
 );
 
 export default privateApi;

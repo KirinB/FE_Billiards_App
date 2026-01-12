@@ -1,5 +1,6 @@
 import axiosInstance from "@/lib/axios";
 import type {
+  ClaimPlayerDto,
   CreateRoomDto,
   RoomResponse,
   UpdateScoreDto,
@@ -51,6 +52,15 @@ export const RoomService = {
     const res = await axiosInstance.post<RoomResponse>(
       `${API_URL}/${roomId}/finish`,
       { pin }
+    );
+    return res.data;
+  },
+
+  // ===== CLAIM PLAYER (BIND USER TO PLAYER) =====
+  claimPlayer: async (payload: ClaimPlayerDto): Promise<RoomResponse> => {
+    const res = await axiosInstance.post<RoomResponse>(
+      `${API_URL}/${payload.roomId}/claim`,
+      { playerId: payload.playerId }
     );
     return res.data;
   },

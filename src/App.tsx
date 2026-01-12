@@ -6,6 +6,10 @@ import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
 import NotFoundPage from "./pages/NotFoundPage";
 import { RoomPage } from "./pages/RoomDetail";
+import Profile from "./pages/Profile";
+import RegisterPage from "./pages/RegisterPage";
+import ProtectedRoute from "./components/ProtectedRoute";
+import PublicRoute from "./components/PublicRoute";
 
 function App() {
   return (
@@ -17,7 +21,15 @@ function App() {
             <Route path="/contact" element={<Contact />} />
             <Route path="/room/:roomId" element={<RoomPage />} />
             <Route path="/faq" element={<FaqPage />} />
-            <Route path="/login" element={<LoginPage />} />
+            {/* Chặn login, register */}
+            <Route element={<PublicRoute />}>
+              <Route path="/login" element={<LoginPage />} />
+              <Route path="/register" element={<RegisterPage />} />
+            </Route>
+            {/* Chặn profile */}
+            <Route element={<ProtectedRoute />}>
+              <Route path="/profile" element={<Profile />} />
+            </Route>
             <Route path="*" element={<NotFoundPage />} />
           </Route>
         </Routes>

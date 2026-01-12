@@ -8,10 +8,8 @@ export const getSocket = () => {
   if (!socket) {
     socket = io(SOCKET_URL, {
       autoConnect: false,
-
-      // ⚠️ QUAN TRỌNG CHO iOS
       transports: ["websocket"],
-      forceNew: true,
+      // forceNew: true,
 
       reconnection: true,
       reconnectionAttempts: Infinity,
@@ -29,6 +27,10 @@ export const connectSocket = () => {
 };
 
 export const disconnectSocket = () => {
-  socket?.disconnect();
-  socket = null;
+  if (socket) {
+    console.log("🔌 Đang ngắt kết nối Socket...");
+    socket.removeAllListeners(); // 🚩 QUAN TRỌNG: Xóa tất cả sự kiện đang lắng nghe
+    socket.disconnect();
+    socket = null; // Reset về null để lần sau getSocket sẽ tạo mới hoàn toàn
+  }
 };

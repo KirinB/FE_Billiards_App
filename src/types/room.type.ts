@@ -44,6 +44,7 @@ export interface RoomResponse {
 
   players: Player[];
   history: RoomHistory[];
+  currentUserId?: string | number | null;
 }
 
 export interface UpdateScoreDto {
@@ -57,4 +58,20 @@ export interface UpdateScoreDto {
   currentPlayerId?: string;
   loserIds?: string[];
   events?: { bi: number; count: number }[];
+}
+
+export interface ClaimPlayerDto {
+  roomId: string | number;
+  playerId: number;
+}
+
+// Cập nhật lại interface Player để có userId (để check xem ai đã nhận)
+export interface Player {
+  id: number;
+  name: string;
+  score: number;
+  roomId: number;
+  userId: number | null; // Thêm dòng này
+  createdAt: string;
+  updatedAt: string;
 }

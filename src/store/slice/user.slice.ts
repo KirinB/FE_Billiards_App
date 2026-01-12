@@ -13,7 +13,6 @@ export interface UserState {
   error: string | null;
 }
 
-// 🔹 Khởi tạo state từ localStorage nếu có
 const localUser = localStorage.getItem("user");
 const localAccessToken = localStorage.getItem("accessToken");
 
@@ -38,14 +37,11 @@ export const loginUser = createAsyncThunk(
   async (payload: { email: string; password: string }, { rejectWithValue }) => {
     try {
       const res = await authService.login(payload);
-
-      // 🔹 Lưu vào localStorage luôn
       localStorage.setItem("accessToken", res.accessToken);
       localStorage.setItem(
         "user",
         JSON.stringify({ id: res.userId, username: res.username })
       );
-
       return res;
     } catch (err: any) {
       return rejectWithValue(err?.response?.data?.message || "Login failed");
@@ -72,26 +68,30 @@ export const userSlice = createSlice({
   name: "user",
   initialState,
   reducers: {
+    // 🔹 Hàm mới: Chỉ cập nhật accessToken khi Silent Refresh thành công
+    updateToken(state, action: PayloadAction<{ accessToken: string }>) {
+      state.accessToken = action.payload.accessToken;
+      localStorage.setItem("accessToken", action.payload.accessToken);
+    },
+
     setUserFromToken(state, action: PayloadAction<UserState>) {
       state.id = action.payload.id;
       state.username = action.payload.username;
       state.accessToken = action.payload.accessToken;
 
-      // 🔹 Cập nhật localStorage
       localStorage.setItem("accessToken", state.accessToken || "");
       localStorage.setItem(
         "user",
         JSON.stringify({ id: state.id, username: state.username })
       );
     },
+
     clearUser(state) {
       state.id = null;
       state.username = null;
       state.accessToken = null;
       state.error = null;
       state.loading = false;
-
-      // 🔹 Xóa localStorage
       localStorage.removeItem("accessToken");
       localStorage.removeItem("user");
     },
@@ -121,8 +121,8 @@ export const userSlice = createSlice({
     builder.addCase(registerUser.fulfilled, (state, action) => {
       state.loading = false;
       state.id = action.payload.userId;
-      state.username = null; // BE trả userId thôi
-      state.accessToken = null; // Chưa login nên chưa có
+      state.username = null;
+      state.accessToken = null;
     });
     builder.addCase(registerUser.rejected, (state, action) => {
       state.loading = false;
@@ -131,5 +131,5 @@ export const userSlice = createSlice({
   },
 });
 
-export const { setUserFromToken, clearUser } = userSlice.actions;
+export const { updateToken, setUserFromToken, clearUser } = userSlice.actions;
 export default userSlice.reducer;

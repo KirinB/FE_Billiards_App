@@ -10,8 +10,16 @@ export const RoomPage = () => {
   const { roomId } = useParams();
   const [searchParams] = useSearchParams();
 
-  const { room, loading, isAuthorized, isViewer, loadRoom, updateRoom } =
-    useRoomController(roomId);
+  const {
+    room,
+    loading,
+    isAuthorized,
+    isViewer,
+    loadRoom,
+    updateRoom,
+    updateScore1vs1,
+    undoScore1vs1,
+  } = useRoomController(roomId);
 
   /* AUTO LOGIN PIN */
   useEffect(() => {
@@ -32,7 +40,12 @@ export const RoomPage = () => {
       <RoomHeader room={room} />
 
       {room.type === "BIDA_1VS1" ? (
-        <BidaSoloView room={room} isReadOnly={isViewer} />
+        <BidaSoloView
+          room={room}
+          isReadOnly={isViewer}
+          onUpdateScore={updateScore1vs1}
+          onUndo={undoScore1vs1}
+        />
       ) : (
         <BidaPenaltyView
           room={room}

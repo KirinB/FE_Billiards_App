@@ -8,7 +8,15 @@ export const getSocket = () => {
   if (!socket) {
     socket = io(SOCKET_URL, {
       autoConnect: false,
+
+      // ⚠️ QUAN TRỌNG CHO iOS
+      transports: ["websocket"],
+      forceNew: true,
+
       reconnection: true,
+      reconnectionAttempts: Infinity,
+      reconnectionDelay: 1000,
+      reconnectionDelayMax: 3000,
     });
   }
   return socket;

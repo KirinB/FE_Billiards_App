@@ -1,8 +1,6 @@
-import { useFinishRoom } from "@/hooks/useFinishRoom";
 import { cn } from "@/lib/utils";
 import { Eye, KeyRound, LogOut, RotateCcw, Trophy, User } from "lucide-react";
 import { useMemo } from "react";
-import { Button } from "../ui/button";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -14,6 +12,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "../ui/alert-dialog";
+import { Button } from "../ui/button";
 
 export const BidaSoloView = ({
   room,

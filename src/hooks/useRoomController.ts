@@ -1,6 +1,6 @@
 import { normalizeRoom } from "@/lib/normalizeRoom";
 import { RoomService } from "@/services/room.service";
-import { connectSocket, disconnectSocket } from "@/services/socket";
+import { connectSocket } from "@/services/socket";
 import type { RootState } from "@/store/store";
 import { useCallback, useEffect, useState } from "react";
 import { useSelector } from "react-redux";

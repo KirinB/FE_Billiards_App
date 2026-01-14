@@ -96,7 +96,8 @@ export const useRoomController = (roomId?: string) => {
       const currentRoomId = String(roomId);
 
       if (payloadRoomId === currentRoomId) {
-        console.log("✅ Cập nhật đúng phòng:", currentRoomId);
+        // console.log("✅ Cập nhật đúng phòng:", currentRoomId);
+        // console.log("🔄 Socket nhận dữ liệu mới:", payload);
         setRoom(normalizeRoom({ ...payload, currentUserId: user?.id }));
       } else {
         console.warn(
@@ -197,6 +198,62 @@ export const useRoomController = (roomId?: string) => {
     }
   };
 
+  /* =========================
+          ACTIONS BIDA BÀI
+     ========================= */
+
+  const startGame = async (pin: string) => {
+    if (!roomId) return;
+    try {
+      setLoading(true);
+      const res = await RoomService.start(roomId, pin);
+      updateRoom(res);
+      toast.success("Ván đấu bắt đầu! Đã chia bài.");
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Không thể bắt đầu");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const drawCard = async (playerId: number) => {
+    if (!roomId) return;
+    try {
+      const res = await RoomService.drawCard(roomId, playerId);
+      updateRoom(res);
+      if (navigator.vibrate) navigator.vibrate(30);
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Không thể rút bài");
+    }
+  };
+
+  const discardCard = async (playerId: number, ballValue: number) => {
+    if (!roomId) return;
+    try {
+      const res = await RoomService.discardCard(roomId, playerId, ballValue);
+      updateRoom(res);
+      toast.success(`Đã bỏ bài bi số ${ballValue}`);
+      if (navigator.vibrate) navigator.vibrate([50, 30, 50]);
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Bạn không có lá bài này");
+    }
+  };
+
+  const resetGame = async (pin: string) => {
+    if (!roomId) return;
+    try {
+      setLoading(true);
+      const res = await RoomService.reset(roomId, pin);
+      console.log(res);
+      updateRoom(res);
+      toast.success("Ván đấu đã được reset!");
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Không thể reset ván đấu");
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return {
     room,
     loading,
@@ -209,5 +266,9 @@ export const useRoomController = (roomId?: string) => {
     updateScore1vs1,
     undoScore1vs1,
     finishRoom,
+    startGame,
+    drawCard,
+    discardCard,
+    resetGame,
   };
 };

@@ -2,11 +2,18 @@
 export interface CreateRoomDto {
   name: string;
   pin: string;
-  type: "BIDA_DIEM_DEN" | "BIDA_1VS1";
+  type: "BIDA_DIEM_DEN" | "BIDA_1VS1" | "BIDA_BAI";
   playerNames: string[];
   valBi3?: number;
   valBi6?: number;
   valBi9?: number;
+}
+
+export interface Card {
+  id: string;
+  value: number;
+  suit: string;
+  isFlipped: boolean;
 }
 
 // ===== PLAYER =====
@@ -15,6 +22,7 @@ export interface Player {
   name: string;
   score: number;
   roomId: number;
+  cards?: Card[];
   createdAt: string;
   updatedAt: string;
 }
@@ -31,7 +39,7 @@ export interface RoomHistory {
 export interface RoomResponse {
   id: number;
   name: string;
-  type: "BIDA_DIEM_DEN" | "BIDA_1VS1";
+  type: "BIDA_DIEM_DEN" | "BIDA_1VS1" | "BIDA_BAI";
   isFinished: boolean;
 
   valBi3: number;
@@ -74,4 +82,9 @@ export interface Player {
   userId: number | null; // Thêm dòng này
   createdAt: string;
   updatedAt: string;
+}
+
+export interface ResetRoomDto {
+  roomId: string | number;
+  pin: string;
 }

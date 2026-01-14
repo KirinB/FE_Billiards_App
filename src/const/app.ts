@@ -5,7 +5,7 @@ export const APP_INFO = {
 
 export const APP_VERSION = {
   major: 2,
-  minor: 1,
+  minor: 2,
   patch: 0,
 };
 

@@ -44,12 +44,7 @@ const MainLayout = () => {
         <div className="h-[env(safe-area-inset-bottom)]" />
       </footer>
 
-      <Toaster
-        position="bottom-center"
-        expand={false}
-        richColors
-        theme="dark"
-      />
+      <Toaster position="top-center" expand={false} richColors theme="dark" />
     </div>
   );
 };

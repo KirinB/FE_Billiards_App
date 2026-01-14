@@ -4,7 +4,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { Activity, Lock, Mail } from "lucide-react";
+import { Activity, Lock, Mail, CheckCircle2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,7 +12,6 @@ import { cn } from "@/lib/utils";
 import type { AppDispatch, RootState } from "@/store/store";
 import { loginUser } from "@/store/slice/user.slice";
 
-// 1. Định nghĩa Schema kiểm tra dữ liệu Login
 const loginSchema = z.object({
   email: z.string().email("Định dạng email không hợp lệ"),
   password: z.string().min(6, "Mật khẩu phải có ít nhất 6 ký tự"),
@@ -26,13 +25,12 @@ export function LoginForm({
 }: React.ComponentProps<"div">) {
   const navigate = useNavigate();
   const dispatch = useDispatch<AppDispatch>();
+  const [isSuccess, setIsSuccess] = React.useState(false);
 
-  // Lấy loading và error từ Redux store (lỗi từ server)
   const { loading, error: serverError } = useSelector(
     (state: RootState) => state.user
   );
 
-  // 2. Khởi tạo React Hook Form
   const {
     register,
     handleSubmit,
@@ -44,7 +42,9 @@ export function LoginForm({
   const onSubmit = async (data: LoginFormValues) => {
     const result = await dispatch(loginUser(data));
     if (loginUser.fulfilled.match(result)) {
-      navigate("/");
+      setIsSuccess(true);
+      // Đợi 2 giây rồi mới chuyển hướng về trang chủ
+      setTimeout(() => navigate("/"), 2000);
     }
   };
 
@@ -63,80 +63,92 @@ export function LoginForm({
           </p>
         </div>
 
-        <form
-          onSubmit={handleSubmit(onSubmit)}
-          className="relative z-10 space-y-5"
-        >
-          {/* Email Field */}
-          <div className="space-y-1">
-            <div className="relative">
-              <Mail className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-white/20" />
-              <Input
-                {...register("email")}
-                type="email"
-                placeholder="Email của bạn"
-                className={cn(
-                  "h-14 pl-12 bg-white/5 border-white/5 rounded-2xl focus:border-[#f2c94c]/50 focus:ring-0 text-sm transition-all",
-                  errors.email && "border-red-500/50"
-                )}
-              />
-            </div>
-            {errors.email && (
-              <p className="text-[10px] text-red-500 ml-4 font-bold uppercase italic">
-                {errors.email.message}
-              </p>
-            )}
+        {isSuccess ? (
+          <div className="relative z-10 py-8 flex flex-col items-center text-center space-y-4">
+            <CheckCircle2 className="size-16 text-green-400 animate-bounce" />
+            <p className="text-green-400 font-bold uppercase tracking-widest text-sm">
+              Đăng nhập thành công!
+            </p>
+            <p className="text-white/40 text-xs">
+              Đang chuyển hướng về trang chủ...
+            </p>
           </div>
-
-          {/* Password Field */}
-          <div className="space-y-1">
-            <div className="relative">
-              <Lock className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-white/20" />
-              <Input
-                {...register("password")}
-                type="password"
-                placeholder="Mật khẩu"
-                className={cn(
-                  "h-14 pl-12 bg-white/5 border-white/5 rounded-2xl focus:border-[#f2c94c]/50 focus:ring-0 text-sm transition-all",
-                  errors.password && "border-red-500/50"
-                )}
-              />
-            </div>
-            {errors.password && (
-              <p className="text-[10px] text-red-500 ml-4 font-bold uppercase italic">
-                {errors.password.message}
-              </p>
-            )}
-          </div>
-
-          {/* Hiển thị lỗi từ Server (ví dụ: Sai mật khẩu) */}
-          {serverError && (
-            <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3">
-              <p className="text-xs text-red-500 font-bold text-center uppercase tracking-tighter">
-                {serverError}
-              </p>
-            </div>
-          )}
-
-          <Button
-            type="submit"
-            disabled={loading}
-            className="w-full h-14 bg-[#f2c94c] hover:bg-[#d4ae3d] text-black font-black uppercase tracking-widest rounded-2xl transition-all active:scale-[0.98]"
+        ) : (
+          <form
+            onSubmit={handleSubmit(onSubmit)}
+            className="relative z-10 space-y-5"
           >
-            {loading ? "Đang xử lý..." : "Đăng nhập ngay"}
-          </Button>
+            {/* Email Field */}
+            <div className="space-y-1">
+              <div className="relative">
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-white/20" />
+                <Input
+                  {...register("email")}
+                  type="email"
+                  placeholder="Email của bạn"
+                  className={cn(
+                    "h-14 pl-12 bg-white/5 border-white/5 rounded-2xl focus:border-[#f2c94c]/50 focus:ring-0 text-sm transition-all",
+                    errors.email && "border-red-500/50"
+                  )}
+                />
+              </div>
+              {errors.email && (
+                <p className="text-[10px] text-red-500 ml-4 font-bold uppercase italic">
+                  {errors.email.message}
+                </p>
+              )}
+            </div>
 
-          <div className="pt-2 text-center">
-            <button
-              type="button"
-              onClick={() => navigate("/register")}
-              className="text-[11px] text-white/40 uppercase font-bold tracking-wider hover:text-[#f2c94c] transition-colors"
+            {/* Password Field */}
+            <div className="space-y-1">
+              <div className="relative">
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 size-4 text-white/20" />
+                <Input
+                  {...register("password")}
+                  type="password"
+                  placeholder="Mật khẩu"
+                  className={cn(
+                    "h-14 pl-12 bg-white/5 border-white/5 rounded-2xl focus:border-[#f2c94c]/50 focus:ring-0 text-sm transition-all",
+                    errors.password && "border-red-500/50"
+                  )}
+                />
+              </div>
+              {errors.password && (
+                <p className="text-[10px] text-red-500 ml-4 font-bold uppercase italic">
+                  {errors.password.message}
+                </p>
+              )}
+            </div>
+
+            {/* Server Error */}
+            {serverError && (
+              <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-3">
+                <p className="text-xs text-red-500 font-bold text-center uppercase tracking-tighter">
+                  {serverError}
+                </p>
+              </div>
+            )}
+
+            <Button
+              type="submit"
+              disabled={loading}
+              className="w-full h-14 bg-[#f2c94c] hover:bg-[#d4ae3d] text-black font-black uppercase tracking-widest rounded-2xl transition-all active:scale-[0.98]"
             >
-              Chưa có tài khoản?{" "}
-              <span className="text-[#f2c94c] underline ml-1">Đăng ký</span>
-            </button>
-          </div>
-        </form>
+              {loading ? "Đang xử lý..." : "Đăng nhập ngay"}
+            </Button>
+
+            <div className="pt-2 text-center">
+              <button
+                type="button"
+                onClick={() => navigate("/register")}
+                className="text-[11px] text-white/40 uppercase font-bold tracking-wider hover:text-[#f2c94c] transition-colors"
+              >
+                Chưa có tài khoản?{" "}
+                <span className="text-[#f2c94c] underline ml-1">Đăng ký</span>
+              </button>
+            </div>
+          </form>
+        )}
 
         <Activity className="absolute -right-8 -bottom-8 size-48 text-white/[0.02] -rotate-12" />
       </div>

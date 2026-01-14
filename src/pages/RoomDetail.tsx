@@ -1,4 +1,5 @@
 import { SelectPlayerModal } from "@/components/PickPlayerModal";
+import { BidaCardView } from "@/components/View/BidaCardView";
 import { BidaPenaltyView } from "@/components/View/BidaPenaltyView";
 import { BidaSoloView } from "@/components/View/BidaSolo";
 import { PinGate } from "@/components/room/PinGate";
@@ -29,6 +30,10 @@ export const RoomPage = () => {
     undoScore1vs1,
     updateRoom,
     finishRoom,
+    startGame,
+    drawCard,
+    discardCard,
+    resetGame,
   } = useRoomController(roomId);
 
   const handlePinSubmit = (pin: string) => loadRoom(pin);
@@ -96,7 +101,13 @@ export const RoomPage = () => {
   /* 3. GIAO DIỆN PHÒNG (ROOM CONTENT) */
   // Hiển thị khi: Đã có dữ liệu room thành công
   return (
-    <div className="min-h-screen p-4">
+    <div
+      className={`min-h-screen ${
+        room.type === "BIDA_BAI"
+          ? "bg-[url('/background_room_card.png')] bg-center bg-cover"
+          : ""
+      }`}
+    >
       <RoomHeader
         room={room}
         isReadOnly={isViewer}
@@ -110,7 +121,7 @@ export const RoomPage = () => {
         onClose={() => setShowSelectPlayer(false)}
       />
 
-      <div className="mt-4">
+      <div className="mt-2">
         {room.type === "BIDA_1VS1" ? (
           <BidaSoloView
             room={room}
@@ -118,6 +129,16 @@ export const RoomPage = () => {
             onUpdateScore={updateScore1vs1}
             finishRoom={finishRoom}
             onUndo={undoScore1vs1}
+          />
+        ) : room.type === "BIDA_BAI" ? (
+          <BidaCardView
+            room={room}
+            isReadOnly={isViewer}
+            onDraw={drawCard}
+            onDiscard={discardCard}
+            onStart={startGame}
+            onReset={resetGame}
+            finishRoom={finishRoom}
           />
         ) : (
           <BidaPenaltyView

@@ -64,4 +64,44 @@ export const RoomService = {
     );
     return res.data;
   },
+
+  // ===== START GAME & CHIA BÀI =====
+  start: async (roomId: string, pin: string): Promise<RoomResponse> => {
+    const res = await axiosInstance.post<RoomResponse>(
+      `${API_URL}/${roomId}/start`,
+      { pin }
+    );
+    return res.data;
+  },
+
+  // ===== RÚT BÀI (DRAW) =====
+  drawCard: async (roomId: string, playerId: number): Promise<RoomResponse> => {
+    const res = await axiosInstance.post<RoomResponse>(
+      `${API_URL}/${roomId}/draw`,
+      { playerId }
+    );
+    return res.data;
+  },
+
+  // ===== BỎ BÀI (DISCARD) =====
+  discardCard: async (
+    roomId: string,
+    playerId: number,
+    ballValue: number
+  ): Promise<RoomResponse> => {
+    const res = await axiosInstance.post<RoomResponse>(
+      `${API_URL}/${roomId}/discard`,
+      { playerId, ballValue }
+    );
+    return res.data;
+  },
+
+  // ===== RESET VÁN ĐẤU (NEW) =====
+  reset: async (roomId: string, pin: string): Promise<RoomResponse> => {
+    const res = await axiosInstance.post<RoomResponse>(
+      `${API_URL}/${roomId}/reset`,
+      { pin }
+    );
+    return res.data;
+  },
 };

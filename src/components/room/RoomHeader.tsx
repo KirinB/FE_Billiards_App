@@ -27,7 +27,7 @@ export const RoomHeader: React.FC<RoomHeaderProps> = ({
   }`;
 
   return (
-    <div className="flex items-center justify-between mb-6">
+    <div className="flex items-center justify-between p-2">
       <div>
         <h1 className="text-2xl font-black text-white uppercase tracking-tighter italic">
           {room.name}

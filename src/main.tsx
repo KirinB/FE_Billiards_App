@@ -4,11 +4,14 @@ import "./index.css";
 import { Provider } from "react-redux";
 import App from "./App.tsx";
 import { store } from "./store/store.ts";
+import { GoogleOAuthProvider } from "@react-oauth/google";
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <Provider store={store}>
-      <App />
+      <GoogleOAuthProvider clientId={import.meta.env.VITE_GOOGLE_CLIENT_ID}>
+        <App />
+      </GoogleOAuthProvider>
     </Provider>
   </StrictMode>
 );

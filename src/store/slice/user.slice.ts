@@ -8,6 +8,7 @@ import { authService } from "@/services/auth.service";
 export interface UserState {
   id: number | null;
   username: string | null;
+  avatar?: string | null;
   accessToken: string | null;
   loading: boolean;
   error: string | null;
@@ -60,6 +61,44 @@ export const registerUser = createAsyncThunk(
       return res;
     } catch (err: any) {
       return rejectWithValue(err?.response?.data?.message || "Register failed");
+    }
+  }
+);
+
+export const loginGoogleUser = createAsyncThunk(
+  "user/loginGoogle",
+  async (idToken: string, { rejectWithValue }) => {
+    try {
+      const res = await authService.googleLogin(idToken);
+      localStorage.setItem("accessToken", res.accessToken);
+      localStorage.setItem(
+        "user",
+        JSON.stringify({ id: res.userId, username: res.username })
+      );
+      return res;
+    } catch (err: any) {
+      return rejectWithValue(
+        err?.response?.data?.message || "Google Login failed"
+      );
+    }
+  }
+);
+
+export const loginFacebookUser = createAsyncThunk(
+  "user/loginFacebook",
+  async (accessToken: string, { rejectWithValue }) => {
+    try {
+      const res = await authService.facebookLogin(accessToken);
+      localStorage.setItem("accessToken", res.accessToken);
+      localStorage.setItem(
+        "user",
+        JSON.stringify({ id: res.userId, username: res.username })
+      );
+      return res;
+    } catch (err: any) {
+      return rejectWithValue(
+        err?.response?.data?.message || "Facebook Login failed"
+      );
     }
   }
 );
@@ -125,6 +164,34 @@ export const userSlice = createSlice({
       state.accessToken = null;
     });
     builder.addCase(registerUser.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.payload as string;
+    });
+    builder.addCase(loginGoogleUser.pending, (state) => {
+      state.loading = true;
+      state.error = null;
+    });
+    builder.addCase(loginGoogleUser.fulfilled, (state, action) => {
+      state.loading = false;
+      state.id = action.payload.userId;
+      state.username = action.payload.username;
+      state.accessToken = action.payload.accessToken;
+    });
+    builder.addCase(loginGoogleUser.rejected, (state, action) => {
+      state.loading = false;
+      state.error = action.payload as string;
+    });
+    builder.addCase(loginFacebookUser.pending, (state) => {
+      state.loading = true;
+      state.error = null;
+    });
+    builder.addCase(loginFacebookUser.fulfilled, (state, action) => {
+      state.loading = false;
+      state.id = action.payload.userId;
+      state.username = action.payload.username;
+      state.accessToken = action.payload.accessToken;
+    });
+    builder.addCase(loginFacebookUser.rejected, (state, action) => {
       state.loading = false;
       state.error = action.payload as string;
     });

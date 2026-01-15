@@ -33,4 +33,20 @@ export const authService = {
     const response = await privateApi.get(`${BASEURL}/profile`);
     return response.data;
   },
+
+  async googleLogin(idToken: string) {
+    const response = await axiosInstance.post<AuthResponse>(
+      `${BASEURL}/google`,
+      { idToken }
+    );
+    return response.data;
+  },
+
+  async facebookLogin(accessToken: string) {
+    const response = await axiosInstance.post<AuthResponse>(
+      `${BASEURL}/facebook`,
+      { accessToken }
+    );
+    return response.data;
+  },
 };

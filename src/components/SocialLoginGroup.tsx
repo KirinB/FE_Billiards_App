@@ -49,18 +49,18 @@ export function SocialLoginGroup({ onSuccess }: SocialLoginGroupProps) {
   const handleGoogleLogin = () => {
     if (!window.google) return;
 
-    const client = window.google.accounts.oauth2.initTokenClient({
+    window.google.accounts.id.initialize({
       client_id: GOOGLE_CLIENT_ID,
-      scope: "email profile",
       callback: async (response: any) => {
-        if (response.access_token) {
-          const result = await dispatch(loginGoogleUser(response.access_token));
-          if (loginGoogleUser.fulfilled.match(result)) onSuccess();
-        }
+        const idToken = response.credential;
+        if (!idToken) return;
+
+        const result = await dispatch(loginGoogleUser(idToken));
+        if (loginGoogleUser.fulfilled.match(result)) onSuccess();
       },
     });
 
-    client.requestAccessToken();
+    window.google.accounts.id.prompt();
   };
 
   // Facebook login helper

@@ -1,7 +1,7 @@
+import { GoogleLogin } from "@react-oauth/google";
 import { useDispatch } from "react-redux";
 import { loginGoogleUser, loginFacebookUser } from "@/store/slice/user.slice";
 import type { AppDispatch } from "@/store/store";
-import { FcGoogle } from "react-icons/fc";
 import { FaFacebookF } from "react-icons/fa";
 import { useEffect } from "react";
 
@@ -13,14 +13,12 @@ declare global {
   interface Window {
     FB: any;
     fbAsyncInit: () => void;
-    google: any;
   }
 }
 
 export function SocialLoginGroup({ onSuccess }: SocialLoginGroupProps) {
   const dispatch = useDispatch<AppDispatch>();
   const FB_APP_ID = import.meta.env.VITE_FACEBOOK_APP_ID;
-  const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
   // Load Facebook SDK
   useEffect(() => {
@@ -44,24 +42,6 @@ export function SocialLoginGroup({ onSuccess }: SocialLoginGroupProps) {
       fjs.parentNode?.insertBefore(js, fjs);
     })(document, "script", "facebook-jssdk");
   }, [FB_APP_ID]);
-
-  // Google login helper
-  const handleGoogleLogin = () => {
-    if (!window.google) return;
-
-    window.google.accounts.id.initialize({
-      client_id: GOOGLE_CLIENT_ID,
-      callback: async (response: any) => {
-        const idToken = response.credential;
-        if (!idToken) return;
-
-        const result = await dispatch(loginGoogleUser(idToken));
-        if (loginGoogleUser.fulfilled.match(result)) onSuccess();
-      },
-    });
-
-    window.google.accounts.id.prompt();
-  };
 
   // Facebook login helper
   const handleFacebookToken = async (token: string) => {
@@ -96,17 +76,26 @@ export function SocialLoginGroup({ onSuccess }: SocialLoginGroupProps) {
       </div>
 
       <div className="flex flex-col gap-3">
-        {/* Google Button */}
-        <button
-          type="button"
-          onClick={handleGoogleLogin}
-          className="w-full h-14 bg-white/10 hover:bg-white/20 text-white rounded-2xl flex items-center justify-center gap-3 font-bold text-sm uppercase transition-all active:scale-[0.98] shadow-lg shadow-black/10"
-        >
-          <FcGoogle size={18} />
-          Tiếp tục với Google
-        </button>
+        {/* Google Login Button */}
+        <div className="flex justify-center w-full overflow-hidden rounded-2xl">
+          <GoogleLogin
+            onSuccess={async (credentialResponse) => {
+              if (!credentialResponse.credential) return;
 
-        {/* Facebook Button */}
+              const result = await dispatch(
+                loginGoogleUser(credentialResponse.credential)
+              );
+              if (loginGoogleUser.fulfilled.match(result)) onSuccess();
+            }}
+            onError={() => console.log("Google Login Failed")}
+            theme="filled_black"
+            shape="pill"
+            width="320px"
+            text="continue_with"
+          />
+        </div>
+
+        {/* Facebook Login Button */}
         <button
           type="button"
           onClick={handleFacebookLogin}

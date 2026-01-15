@@ -1,7 +1,7 @@
-import { GoogleLogin } from "@react-oauth/google";
 import { useDispatch } from "react-redux";
 import { loginGoogleUser, loginFacebookUser } from "@/store/slice/user.slice";
 import type { AppDispatch } from "@/store/store";
+import { FcGoogle } from "react-icons/fc";
 import { FaFacebookF } from "react-icons/fa";
 import { useEffect } from "react";
 
@@ -13,12 +13,14 @@ declare global {
   interface Window {
     FB: any;
     fbAsyncInit: () => void;
+    google: any;
   }
 }
 
 export function SocialLoginGroup({ onSuccess }: SocialLoginGroupProps) {
   const dispatch = useDispatch<AppDispatch>();
   const FB_APP_ID = import.meta.env.VITE_FACEBOOK_APP_ID;
+  const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
   // Load Facebook SDK
   useEffect(() => {
@@ -43,7 +45,27 @@ export function SocialLoginGroup({ onSuccess }: SocialLoginGroupProps) {
     })(document, "script", "facebook-jssdk");
   }, [FB_APP_ID]);
 
-  // Facebook login helper
+  // --- Google login custom button ---
+  const handleGoogleLogin = () => {
+    if (!window.google) return;
+
+    // Sử dụng ID token client
+    const client = window.google.accounts.id.initialize({
+      client_id: GOOGLE_CLIENT_ID,
+      callback: async (response: any) => {
+        // response.credential chính là ID Token
+        const token = response.credential;
+        if (token) {
+          const result = await dispatch(loginGoogleUser(token));
+          if (loginGoogleUser.fulfilled.match(result)) onSuccess();
+        }
+      },
+    });
+
+    window.google.accounts.id.prompt(); // hiển thị popup
+  };
+
+  // Facebook login
   const handleFacebookToken = async (token: string) => {
     const result = await dispatch(loginFacebookUser(token));
     if (loginFacebookUser.fulfilled.match(result)) onSuccess();
@@ -62,49 +84,26 @@ export function SocialLoginGroup({ onSuccess }: SocialLoginGroupProps) {
   };
 
   return (
-    <div className="w-full flex flex-col gap-4">
-      {/* Divider */}
-      <div className="relative my-2">
-        <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t border-white/5" />
-        </div>
-        <div className="relative flex justify-center text-[10px] uppercase font-bold">
-          <span className="bg-[#1a1d24] px-2 text-white/20 tracking-[0.2em]">
-            Hoặc tiếp tục với
-          </span>
-        </div>
-      </div>
+    <div className="w-full flex flex-col gap-3">
+      {/* Google Button */}
+      <button
+        type="button"
+        onClick={handleGoogleLogin}
+        className="w-full h-14 bg-white/10 hover:bg-white/20 text-white rounded-2xl flex items-center justify-center gap-3 font-bold text-sm uppercase transition-all active:scale-[0.98] shadow-lg shadow-black/10"
+      >
+        <FcGoogle size={18} />
+        Tiếp tục với Google
+      </button>
 
-      <div className="flex flex-col gap-3">
-        {/* Google Login Button */}
-        <div className="flex justify-center w-full overflow-hidden rounded-2xl">
-          <GoogleLogin
-            onSuccess={async (credentialResponse) => {
-              if (!credentialResponse.credential) return;
-
-              const result = await dispatch(
-                loginGoogleUser(credentialResponse.credential)
-              );
-              if (loginGoogleUser.fulfilled.match(result)) onSuccess();
-            }}
-            onError={() => console.log("Google Login Failed")}
-            theme="filled_black"
-            shape="pill"
-            width="320px"
-            text="continue_with"
-          />
-        </div>
-
-        {/* Facebook Login Button */}
-        <button
-          type="button"
-          onClick={handleFacebookLogin}
-          className="w-full h-14 bg-[#1877F2] hover:bg-[#166fe5] text-white rounded-2xl flex items-center justify-center gap-3 font-bold text-sm uppercase transition-all active:scale-[0.98] shadow-lg shadow-blue-500/20"
-        >
-          <FaFacebookF size={18} />
-          Tiếp tục với Facebook
-        </button>
-      </div>
+      {/* Facebook Button */}
+      <button
+        type="button"
+        onClick={handleFacebookLogin}
+        className="w-full h-14 bg-[#1877F2] hover:bg-[#166fe5] text-white rounded-2xl flex items-center justify-center gap-3 font-bold text-sm uppercase transition-all active:scale-[0.98] shadow-lg shadow-blue-500/20"
+      >
+        <FaFacebookF size={18} />
+        Tiếp tục với Facebook
+      </button>
     </div>
   );
 }

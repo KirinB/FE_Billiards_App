@@ -49,11 +49,11 @@ export function SocialLoginGroup({ onSuccess }: SocialLoginGroupProps) {
   const handleGoogleLogin = () => {
     if (!window.google) return;
 
-    // Sử dụng ID token client
-    const client = window.google.accounts.id.initialize({
+    window.google.accounts.id.initialize({
       client_id: GOOGLE_CLIENT_ID,
+      itp_support: true, // Hỗ trợ Intelligent Tracking Prevention
+      use_fedcm_for_prompt: false, // 🔑 QUAN TRỌNG: Tắt FedCM để quay lại popup cũ
       callback: async (response: any) => {
-        // response.credential chính là ID Token
         const token = response.credential;
         if (token) {
           const result = await dispatch(loginGoogleUser(token));
@@ -62,7 +62,14 @@ export function SocialLoginGroup({ onSuccess }: SocialLoginGroupProps) {
       },
     });
 
-    window.google.accounts.id.prompt(); // hiển thị popup
+    // Ép buộc chọn tài khoản (mở lại popup chọn email)
+    window.google.accounts.id.prompt((notification: any) => {
+      if (notification.isNotDisplayed()) {
+        console.log(
+          "Prompt không hiển thị, có thể do bị chặn bởi người dùng hoặc FedCM"
+        );
+      }
+    });
   };
 
   // Facebook login

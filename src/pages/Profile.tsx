@@ -89,8 +89,16 @@ const Profile = () => {
       <div className="relative overflow-hidden bg-gradient-to-br from-[#1a1d24] to-[#0f1115] border border-white/5 rounded-[32px] p-6 mb-6 shadow-xl">
         <div className="relative z-10 flex items-center justify-between">
           <div className="flex items-center gap-5">
-            <div className="size-16 rounded-2xl bg-[#f2c94c] shadow-[0_0_20px_rgba(242,201,76,0.3)] flex items-center justify-center text-black font-black text-2xl rotate-3">
-              {username?.charAt(0)?.toUpperCase()}
+            <div className="size-16 rounded-2xl bg-[#f2c94c] shadow-[0_0_20px_rgba(242,201,76,0.3)] flex items-center justify-center text-black font-black text-2xl rotate-3 overflow-hidden">
+              {profileData?.avatar ? (
+                <img
+                  src={profileData.avatar}
+                  alt={username || "avatar"}
+                  className="w-full h-full object-cover -rotate-3 scale-110" // -rotate-3 để bù lại độ nghiêng của div cha
+                />
+              ) : (
+                username?.charAt(0)?.toUpperCase()
+              )}
             </div>
             <div>
               <h1 className="text-2xl font-black italic uppercase tracking-tighter leading-none">

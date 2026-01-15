@@ -1,16 +1,17 @@
-import * as React from "react";
-import { useNavigate } from "react-router-dom";
-import { useDispatch, useSelector } from "react-redux";
-import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Activity, CheckCircle2, Lock, Mail } from "lucide-react";
+import * as React from "react";
+import { useForm } from "react-hook-form";
+import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 import * as z from "zod";
-import { Activity, Lock, Mail, CheckCircle2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { cn } from "@/lib/utils";
-import type { AppDispatch, RootState } from "@/store/store";
 import { loginUser } from "@/store/slice/user.slice";
+import type { AppDispatch, RootState } from "@/store/store";
+import { SocialLoginGroup } from "./SocialLoginGroup";
 
 const loginSchema = z.object({
   email: z.string().email("Định dạng email không hợp lệ"),
@@ -136,6 +137,13 @@ export function LoginForm({
             >
               {loading ? "Đang xử lý..." : "Đăng nhập ngay"}
             </Button>
+
+            <SocialLoginGroup
+              onSuccess={() => {
+                setIsSuccess(true);
+                setTimeout(() => navigate("/"), 2000);
+              }}
+            />
 
             <div className="pt-2 text-center">
               <button

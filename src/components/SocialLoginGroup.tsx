@@ -1,94 +1,87 @@
 import { useDispatch } from "react-redux";
-import { loginGoogleUser } from "@/store/slice/user.slice";
+import { loginGoogleUser, loginFacebookUser } from "@/store/slice/user.slice";
 import type { AppDispatch } from "@/store/store";
 import { FcGoogle } from "react-icons/fc";
-// import { FaFacebookF } from "react-icons/fa";
-import { useEffect } from "react";
+import { FaFacebookF } from "react-icons/fa";
 
 interface SocialLoginGroupProps {
   onSuccess: () => void;
 }
 
+// Đảm bảo TypeScript nhận diện được FB và google trên window
 declare global {
   interface Window {
     FB: any;
-    fbAsyncInit: () => void;
     google: any;
   }
 }
 
 export function SocialLoginGroup({ onSuccess }: SocialLoginGroupProps) {
   const dispatch = useDispatch<AppDispatch>();
-  const FB_APP_ID = import.meta.env.VITE_FACEBOOK_APP_ID;
   const GOOGLE_CLIENT_ID = import.meta.env.VITE_GOOGLE_CLIENT_ID;
 
-  // Load Facebook SDK
-  useEffect(() => {
-    window.fbAsyncInit = function () {
-      window.FB.init({
-        appId: FB_APP_ID,
-        cookie: true,
-        xfbml: false,
-        version: "v18.0",
-      });
-    };
+  // --- Facebook Login Logic ---
+  const handleFacebookLogin = () => {
+    if (!window.FB) return;
 
-    (function (d, s, id) {
-      let js: HTMLScriptElement;
-      const fjs = d.getElementsByTagName(s)[0];
-      if (d.getElementById(id)) return;
+    // Callback truyền vào FB.login KHÔNG ĐƯỢC để async
+    window.FB.login(
+      (response: any) => {
+        if (response.authResponse) {
+          const fbAccessToken = response.authResponse.accessToken;
 
-      js = d.createElement(s) as HTMLScriptElement;
-      js.id = id;
-      js.src = "https://connect.facebook.net/vi_VN/sdk.js";
-      fjs.parentNode?.insertBefore(js, fjs);
-    })(document, "script", "facebook-jssdk");
-  }, [FB_APP_ID]);
+          // Tạo một hàm async riêng bên trong hoặc gọi thunk
+          const processLogin = async () => {
+            try {
+              const result = await dispatch(loginFacebookUser(fbAccessToken));
+              if (loginFacebookUser.fulfilled.match(result)) {
+                onSuccess();
+              }
+            } catch (error) {
+              console.error("Facebook Login Error:", error);
+            }
+          };
 
-  // --- Google login custom button ---
+          processLogin(); // Chạy hàm async
+        }
+      },
+      { scope: "public_profile,email" }
+    );
+  };
+  // --- Google Login Logic (Giữ nguyên logic cũ của bạn) ---
+  // --- Google Login Logic ---
   const handleGoogleLogin = () => {
     if (!window.google) return;
 
     window.google.accounts.id.initialize({
       client_id: GOOGLE_CLIENT_ID,
-      itp_support: true, // Hỗ trợ Intelligent Tracking Prevention
-      use_fedcm_for_prompt: false, // 🔑 QUAN TRỌNG: Tắt FedCM để quay lại popup cũ
-      callback: async (response: any) => {
+      itp_support: true,
+      use_fedcm_for_prompt: false,
+      callback: (response: any) => {
         const token = response.credential;
         if (token) {
-          const result = await dispatch(loginGoogleUser(token));
-          if (loginGoogleUser.fulfilled.match(result)) onSuccess();
+          // Tách logic async ra riêng
+          const processGoogleLogin = async () => {
+            try {
+              const result = await dispatch(loginGoogleUser(token));
+              if (loginGoogleUser.fulfilled.match(result)) {
+                onSuccess();
+              }
+            } catch (err) {
+              console.error("Google Dispatch Error:", err);
+            }
+          };
+          processGoogleLogin();
         }
       },
     });
 
-    // Ép buộc chọn tài khoản (mở lại popup chọn email)
     window.google.accounts.id.prompt((notification: any) => {
       if (notification.isNotDisplayed()) {
-        console.log(
-          "Prompt không hiển thị, có thể do bị chặn bởi người dùng hoặc FedCM"
-        );
+        console.log("Prompt không hiển thị do bị chặn hoặc FedCM");
       }
     });
   };
-
-  // Facebook login
-  // const handleFacebookToken = async (token: string) => {
-  //   const result = await dispatch(loginFacebookUser(token));
-  //   if (loginFacebookUser.fulfilled.match(result)) onSuccess();
-  // };
-
-  // const handleFacebookLogin = () => {
-  //   if (!window.FB) return;
-
-  //   window.FB.login(
-  //     (response: any) => {
-  //       if (!response.authResponse) return;
-  //       handleFacebookToken(response.authResponse.accessToken);
-  //     },
-  //     { scope: "public_profile,email" }
-  //   );
-  // };
 
   return (
     <div className="w-full flex flex-col gap-3">
@@ -99,8 +92,9 @@ export function SocialLoginGroup({ onSuccess }: SocialLoginGroupProps) {
         </span>
         <div className="flex-grow border-t border-white/10"></div>
       </div>
-      {/* Google Button */}
+
       <div className="space-y-4">
+        {/* Google Button */}
         <button
           type="button"
           onClick={handleGoogleLogin}
@@ -111,14 +105,14 @@ export function SocialLoginGroup({ onSuccess }: SocialLoginGroupProps) {
         </button>
 
         {/* Facebook Button */}
-        {/* <button
+        <button
           type="button"
-          onClick={handleFacebookLogin}
+          onClick={() => handleFacebookLogin()}
           className="w-full h-14 bg-[#1877F2] hover:bg-[#166fe5] text-white rounded-2xl flex items-center justify-center gap-3 font-bold text-sm uppercase transition-all active:scale-[0.98] shadow-lg shadow-blue-500/20"
         >
           <FaFacebookF size={18} />
           Tiếp tục với Facebook
-        </button> */}
+        </button>
       </div>
     </div>
   );

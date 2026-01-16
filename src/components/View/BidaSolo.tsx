@@ -72,7 +72,7 @@ export const BidaSoloView = ({
           <div
             key={player.id}
             className={cn(
-              "relative overflow-hidden p-8 rounded-[40px] border-2 transition-all flex flex-col justify-center",
+              "relative select-none overflow-hidden p-8 rounded-[40px] border-2 transition-all flex flex-col justify-center",
               isReadOnly
                 ? "cursor-default"
                 : "cursor-pointer active:scale-[0.98] hover:border-white/20",

@@ -19,7 +19,7 @@ export const FAQ_DATA: FaqItem[] = [
   {
     question: "Điểm số có cập nhật theo thời gian thực không?",
     answer:
-      "Có. Mỗi lần ghi điểm sẽ được phát realtime đến tất cả người đang xem phòng thông qua Socket.IO.",
+      "Có. Mỗi lần ghi điểm sẽ được phát realtime đến tất cả người đang xem phòng chơi.",
   },
   {
     question: "Có lưu lịch sử ván đấu không?",

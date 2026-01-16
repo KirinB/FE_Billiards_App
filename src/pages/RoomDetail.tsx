@@ -39,7 +39,6 @@ export const RoomPage = () => {
   const handlePinSubmit = (pin: string) => loadRoom(pin);
   const handleJoinViewer = () => loadRoom("");
 
-  /* AUTO LOGIN PIN HOẶC XỬ LÝ MODE VIEW */
   useEffect(() => {
     const initAuth = async () => {
       const mode = searchParams.get("mode");
@@ -48,22 +47,32 @@ export const RoomPage = () => {
 
       try {
         if (mode === "viewer") {
-          // Nếu từ Profile sang với mode=viewer, vào thẳng chế độ đọc
           await loadRoom("");
         } else if (urlPin || savedPin) {
-          // Nếu có mã PIN lưu sẵn, thử tự động đăng nhập
+          // Thực hiện login với PIN từ URL hoặc LocalStorage
           await loadRoom(urlPin || savedPin || "");
+          // LƯU Ý: Xoá PIN khỏi URL sau khi đã dùng để đăng nhập
+          if (urlPin) {
+            const newUrl = new URL(window.location.href);
+            newUrl.searchParams.delete("pin");
+            // replaceState giúp thay đổi URL mà không lưu vào lịch sử trình duyệt (ấn back không quay lại URL có PIN)
+            window.history.replaceState(
+              {},
+              "",
+              newUrl.pathname + newUrl.search
+            );
+          }
+          // --------------------------------------
         }
       } catch (error) {
         console.error("Auto auth failed");
       } finally {
-        // Sau khi đã thử các phương thức auto-auth, tắt màn hình loading chờ
         setIsInitialAuth(false);
       }
     };
 
     initAuth();
-  }, [roomId]); // Chỉ chạy lại khi roomId thay đổi
+  }, [roomId]);
 
   /* 1. MÀN HÌNH CHỜ (LOADING STATE) */
   // Hiển thị khi: Đang loading từ Hook HOẶC đang xử lý logic auth ban đầu

@@ -10,6 +10,7 @@ import Profile from "./pages/Profile";
 import RegisterPage from "./pages/RegisterPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import PublicRoute from "./components/PublicRoute";
+import PrivacyPage from "./pages/PrivacyPage";
 
 function App() {
   return (
@@ -21,6 +22,7 @@ function App() {
             <Route path="/contact" element={<Contact />} />
             <Route path="/room/:roomId" element={<RoomPage />} />
             <Route path="/faq" element={<FaqPage />} />
+            <Route path="/privacy" element={<PrivacyPage />} />
             {/* Chặn login, register */}
             <Route element={<PublicRoute />}>
               <Route path="/login" element={<LoginPage />} />

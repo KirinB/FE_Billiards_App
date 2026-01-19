@@ -1,20 +1,20 @@
 import { MatchHistoryCard } from "@/components/MatchHistoryCard";
-import { authService } from "@/services/auth.service";
-import { clearUser } from "@/store/slice/user.slice";
-import { type RootState } from "@/store/store";
-import { Activity, LogOut } from "lucide-react";
-import { useEffect, useState, useMemo } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import { useNavigate } from "react-router-dom";
 import {
   Pagination,
   PaginationContent,
+  PaginationEllipsis,
   PaginationItem,
   PaginationLink,
   PaginationNext,
   PaginationPrevious,
-  PaginationEllipsis,
 } from "@/components/ui/pagination";
+import { authService } from "@/services/auth.service";
+import { logoutUser } from "@/store/slice/user.slice";
+import { type RootState } from "@/store/store";
+import { Activity, LogOut } from "lucide-react";
+import { useEffect, useMemo, useState } from "react";
+import { useDispatch, useSelector } from "react-redux";
+import { useNavigate } from "react-router-dom";
 
 const ITEMS_PER_PAGE = 5;
 
@@ -78,7 +78,7 @@ const Profile = () => {
   };
 
   const handleLogout = () => {
-    dispatch(clearUser());
+    dispatch(logoutUser() as any);
     navigate("/login");
   };
 

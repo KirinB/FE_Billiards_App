@@ -103,6 +103,19 @@ export const loginFacebookUser = createAsyncThunk(
   }
 );
 
+export const logoutUser = createAsyncThunk(
+  "user/logout",
+  async (_, { dispatch }) => {
+    try {
+      await authService.logout();
+    } catch (err) {
+      console.error("Logout API failed", err);
+    } finally {
+      dispatch(clearUser());
+    }
+  }
+);
+
 export const userSlice = createSlice({
   name: "user",
   initialState,

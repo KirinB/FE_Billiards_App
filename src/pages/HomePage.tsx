@@ -1,20 +1,48 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { RoomService } from "@/services/room.service";
-import {
-  Card,
-  CardAction,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Loader2, PlayCircle, Trophy, Users, RotateCw } from "lucide-react";
 import CreateRoomDialog from "@/components/CreateRoomDialog";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
-import { toast } from "sonner"; // Hoặc bất cứ thư viện thông báo nào bạn đang dùng
+import { RoomService } from "@/services/room.service";
 import type { RoomResponse } from "@/types/room.type";
+import {
+  Loader2,
+  PlayCircle,
+  RotateCw,
+  Trophy,
+  User2,
+  Users,
+} from "lucide-react";
+import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
+
+const getRoomBadge = (type: string) => {
+  switch (type) {
+    case "BIDA_BAI":
+      return {
+        label: "Bida Bài",
+        class:
+          "bg-[#a8c5bb]/10 text-[#a8c5bb] border-[#a8c5bb]/20 shadow-[0_0_8px_rgba(168,197,187,0.1)]",
+      };
+    case "BIDA_DIEM_DEN":
+      return {
+        label: "Điểm Đến",
+        class:
+          "bg-[#f2c94c]/10 text-[#f2c94c] border-[#f2c94c]/20 shadow-[0_0_8px_rgba(242,201,76,0.1)]",
+      };
+    case "BIDA_1VS1":
+      return {
+        label: "Solo 1vs1",
+        class:
+          "bg-[#e67e22]/10 text-[#e67e22] border-[#e67e22]/20 shadow-[0_0_8px_rgba(230,126,34,0.1)]",
+      };
+    default:
+      return {
+        label: "Cơ bản",
+        class: "bg-white/5 text-white/40 border-white/10",
+      };
+  }
+};
 
 const HomePage = () => {
   const [rooms, setRooms] = useState<RoomResponse[]>([]);
@@ -40,7 +68,7 @@ const HomePage = () => {
       setIsRefreshing(true);
 
       const response = await RoomService.getAll();
-      // console.log(response.data);
+      console.log(response);
 
       if (response) {
         setRooms(response);
@@ -109,44 +137,64 @@ const HomePage = () => {
           rooms.map((room) => (
             <Card
               key={room.id}
-              className="cursor-pointer active:scale-[0.98] transition-all bg-[#1a1a1a] border-white/5 overflow-hidden"
+              className="group cursor-pointer active:scale-[0.98] transition-all bg-[#1a1a1a] border-white/5 hover:border-[#f2c94c]/30 overflow-hidden"
               onClick={() => navigate(`/room/${room.id}`)}
             >
-              <CardHeader className="pb-2">
+              <CardHeader className="pb-3 flex-row items-center justify-between">
                 <div className="flex flex-col gap-1">
-                  <CardTitle className="text-lg tracking-tight text-white">
+                  <CardTitle className="text-lg font-bold text-white group-hover:text-[#f2c94c] transition-colors">
                     {room.name}
                   </CardTitle>
-                  <CardDescription className="flex items-center gap-1.5 uppercase tracking-widest text-xs">
-                    <Users className="size-3" />
-                    {room.type === "BIDA_DIEM_DEN"
-                      ? "Bida Điểm Đến"
-                      : "Bida 1 VS 1"}
-                  </CardDescription>
-                </div>
-                <CardAction>
-                  <div className="bg-[#2a4d40]/30 p-2 rounded-lg border border-white/5">
-                    <PlayCircle className="text-[#f2c94c] size-6" />
+                  <div className="flex items-center gap-2 mt-1">
+                    {/* Nhãn loại phòng */}
+                    <span
+                      className={cn(
+                        "text-[9px] px-2 py-0.5 rounded-md font-black uppercase tracking-wider border",
+                        getRoomBadge(room.type).class
+                      )}
+                    >
+                      {getRoomBadge(room.type).label}
+                    </span>
+
+                    {/* ID Phòng (tùy chọn, giúp UI cân bằng hơn) */}
+                    <span className="text-[9px] text-white/20 font-mono italic">
+                      #{room.id}
+                    </span>
                   </div>
-                </CardAction>
+                </div>
+                <div className="bg-[#2a4d40]/30 p-2 rounded-lg border border-white/5">
+                  <PlayCircle className="text-[#f2c94c] size-5" />
+                </div>
               </CardHeader>
 
-              <CardContent className="flex items-center justify-between pt-0">
-                <div className="flex flex-col">
-                  <span className="text-[9px] uppercase font-bold text-[#a8c5bb] opacity-40">
-                    Cập nhật cuối
+              <CardContent className="flex items-center justify-between pt-2 border-t border-white/[0.02]">
+                {/* HIỂN THỊ ICON USER THEO SLOT */}
+                <div className="flex flex-col gap-1.5">
+                  <span className="text-[9px] uppercase font-bold text-white/30 tracking-widest">
+                    Cơ thủ
                   </span>
-                  <span className="text-[11px] font-medium text-white/60">
-                    {new Date(room.updatedAt).toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
+                  <div className="flex gap-2">
+                    {room.players?.map((p, idx) => {
+                      const isClaimed = !!(p.userId || p.tempIdentity);
+                      return (
+                        <div key={p.id || idx} className="relative">
+                          <User2
+                            className={cn(
+                              "size-5 transition-all",
+                              isClaimed
+                                ? "text-[#27ae60] drop-shadow-[0_0_5px_rgba(39,174,96,0.4)]"
+                                : "text-white/10"
+                            )}
+                          />
+                        </div>
+                      );
                     })}
-                  </span>
+                  </div>
                 </div>
 
                 <Button
                   variant="ghost"
-                  className="bg-[#f2c94c] hover:bg-[#d4af37] text-black text-[10px] font-black px-4 py-2 rounded-xl uppercase shadow-lg h-8"
+                  className="bg-[#f2c94c] hover:bg-[#d4af37] text-black text-[11px] font-black px-6 rounded-xl uppercase shadow-lg h-9"
                   onClick={(e) => {
                     e.stopPropagation();
                     handleJoinRoom(room.id);

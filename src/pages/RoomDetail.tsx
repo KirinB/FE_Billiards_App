@@ -1,4 +1,4 @@
-import { SelectPlayerModal } from "@/components/PickPlayerModal";
+import { PickPlayerModal } from "@/components/PickPlayerModal";
 import { BidaCardView } from "@/components/View/BidaCardView";
 import { BidaPenaltyView } from "@/components/View/BidaPenaltyView";
 import { BidaSoloView } from "@/components/View/BidaSolo";
@@ -123,7 +123,7 @@ export const RoomPage = () => {
         isViewer={mode === "viewer"}
       />
 
-      <SelectPlayerModal
+      <PickPlayerModal
         open={showSelectPlayer}
         players={room.players}
         onSelect={handleClaimPlayer}

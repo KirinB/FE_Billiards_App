@@ -60,7 +60,11 @@ export const RoomService = {
   claimPlayer: async (payload: ClaimPlayerDto): Promise<RoomResponse> => {
     const res = await axiosInstance.post<RoomResponse>(
       `${API_URL}/${payload.roomId}/claim`,
-      { playerId: payload.playerId }
+      {
+        playerId: payload.playerId,
+        tempIdentity: payload.tempIdentity,
+        guestName: payload.guestName,
+      }
     );
     return res.data;
   },
@@ -75,10 +79,14 @@ export const RoomService = {
   },
 
   // ===== RÚT BÀI (DRAW) =====
-  drawCard: async (roomId: string, playerId: number): Promise<RoomResponse> => {
+  drawCard: async (
+    roomId: string,
+    playerId: number,
+    tempIdentity?: string | null
+  ): Promise<RoomResponse> => {
     const res = await axiosInstance.post<RoomResponse>(
       `${API_URL}/${roomId}/draw`,
-      { playerId }
+      { playerId, tempIdentity }
     );
     return res.data;
   },
@@ -87,11 +95,12 @@ export const RoomService = {
   discardCard: async (
     roomId: string,
     playerId: number,
-    ballValue: number
+    ballValue: number,
+    tempIdentity?: string | null
   ): Promise<RoomResponse> => {
     const res = await axiosInstance.post<RoomResponse>(
       `${API_URL}/${roomId}/discard`,
-      { playerId, ballValue }
+      { playerId, ballValue, tempIdentity }
     );
     return res.data;
   },

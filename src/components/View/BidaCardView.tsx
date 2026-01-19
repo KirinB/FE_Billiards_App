@@ -48,18 +48,29 @@ export const BidaCardView = ({
   onReset,
   finishRoom,
 }: BidaCardViewProps) => {
-  const { id: userId } = useSelector((state: RootState) => state.user);
+  const currentId = String(room.currentUserId);
+  const me = room.players.find(
+    (p: any) =>
+      String(p.userId) === currentId || String(p.tempIdentity) === currentId
+  );
 
-  const me = room.players.find((p: any) => p.userId === userId);
-  const others = room.players.filter((p: any) => p.userId !== userId);
+  const others = room.players.filter(
+    (p: any) =>
+      String(p.userId) !== currentId && String(p.tempIdentity) !== currentId
+  );
 
   const hasStarted = room.players.some((p: any) => p.cards?.length > 0);
 
   const winnerPlayer = room.players.find(
-    (p: any) => hasStarted && p.userId && p.cards?.length === 0
+    (p: any) =>
+      hasStarted && (p.userId || p.tempIdentity) && p.cards?.length === 0
   );
+
   const someoneWon = !!winnerPlayer;
-  const isMeWinner = winnerPlayer?.userId === userId;
+  const isMeWinner =
+    winnerPlayer &&
+    (String(winnerPlayer.userId) === currentId ||
+      String(winnerPlayer.tempIdentity) === currentId);
 
   const chunkCards = (arr: any[], size: number) => {
     const result: any = [];
@@ -78,27 +89,34 @@ export const BidaCardView = ({
     <div className="h-[calc(100vh-80px)] text-white overflow-hidden relative">
       {/* 1. OTHER PLAYERS */}
       <div className="flex justify-around px-4 pt-4 bg-black/20 pb-4">
-        {others.map((p: any) => (
-          <div
-            key={p.id}
-            className="flex flex-col items-center gap-1 opacity-80"
-          >
-            <div className={p.userId ? "relative" : "opacity-30"}>
-              <div className="w-12 h-12 rounded-full border-2 border-white/20 bg-white/5 flex items-center justify-center font-black overflow-hidden text-xs">
-                {p.userId ? p.name?.[0] || "U" : "?"}
+        {others.map((p: any) => {
+          // Kiểm tra xem slot này có người (User hoặc Guest) hay không
+          const isOccupied = !!(p.userId || p.tempIdentity);
+
+          return (
+            <div
+              key={p.id}
+              className="flex flex-col items-center gap-1 opacity-80"
+            >
+              <div className={isOccupied ? "relative" : "opacity-30"}>
+                <div className="w-12 h-12 rounded-full border-2 border-white/20 bg-white/5 flex items-center justify-center font-black overflow-hidden text-xs">
+                  {isOccupied ? p.name?.[0] || "U" : "?"}
+                </div>
+                {isOccupied && (
+                  <span className="absolute -bottom-1 -right-1 bg-green-500 size-3 rounded-full border-2 border-[#1a1c20]" />
+                )}
               </div>
-              {p.userId && (
-                <span className="absolute -bottom-1 -right-1 bg-green-500 size-3 rounded-full border-2 border-[#1a1c20]" />
-              )}
+
+              <span className="text-[12px] font-bold truncate max-w-[60px]">
+                {p.name || (isOccupied ? "Người chơi" : "Trống")}
+              </span>
+
+              <span className="text-[12px] text-[#f2c94c] font-bold">
+                {p.cards?.length || 0} lá
+              </span>
             </div>
-            <span className="text-[10px] font-bold truncate max-w-[60px]">
-              {p.name}
-            </span>
-            <span className="text-[10px] text-[#f2c94c] font-bold">
-              {p.cards?.length || 0} lá
-            </span>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {/* 2. TABLE CENTER */}

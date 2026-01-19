@@ -21,6 +21,8 @@ export interface Card {
 // ===== PLAYER =====
 export interface Player {
   id: number;
+  userId: number | null;
+  tempIdentity?: string | null;
   name: string;
   score: number;
   roomId: number;
@@ -73,6 +75,8 @@ export interface UpdateScoreDto {
 export interface ClaimPlayerDto {
   roomId: string | number;
   playerId: number;
+  tempIdentity?: string | null;
+  guestName?: string;
 }
 
 // Cập nhật lại interface Player để có userId (để check xem ai đã nhận)

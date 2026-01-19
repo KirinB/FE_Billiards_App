@@ -6,6 +6,7 @@ import { useCallback, useEffect, useState } from "react";
 import { useSelector } from "react-redux";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { getGuestId } from "@/lib/guest"; // Import hàm uuid
 
 export const useRoomController = (roomId?: string) => {
   const navigate = useNavigate();
@@ -14,15 +15,11 @@ export const useRoomController = (roomId?: string) => {
   const [isViewer, setIsViewer] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  // Quản lý Modal tại đây cho gọn
   const [showSelectPlayer, setShowSelectPlayer] = useState(false);
 
   const { user } = useSelector((state: RootState) => state);
   const accessToken = user.accessToken;
 
-  /* =========================
-        LOAD ROOM (HTTP)
-     ========================= */
   const loadRoom = useCallback(
     async (pin: string, silent = false) => {
       if (!roomId) return;
@@ -30,10 +27,12 @@ export const useRoomController = (roomId?: string) => {
         if (!silent) setLoading(true);
         const res = await RoomService.getById(roomId, pin);
 
-        // Gán currentUserId từ store vào room data
+        // Logic check định danh: ưu tiên userId, không có thì dùng guestId
+        const currentUserId = user?.id || getGuestId();
+
         const normalized = normalizeRoom({
           ...res,
-          currentUserId: user?.id,
+          currentUserId: currentUserId,
         });
 
         setRoom(normalized);
@@ -53,33 +52,41 @@ export const useRoomController = (roomId?: string) => {
   );
 
   /* =========================
-        AUTO SHOW/HIDE MODAL
+        AUTO SHOW/HIDE MODAL (Cập nhật logic UUID)
      ========================= */
   useEffect(() => {
-    // Điều kiện hiện: Có room, không phải viewer, đã login
-    if (!room || isViewer || !accessToken || !user?.id) {
+    // 1. Nếu chưa có dữ liệu room hoặc đang ở chế độ Viewer (không nhập PIN) thì không hiện modal
+    if (!room || isViewer) {
       setShowSelectPlayer(false);
       return;
     }
 
-    const myId = Number(user.id);
-    const isAlreadyClaimed = room.players?.some(
-      (p: any) => p.userId !== null && Number(p.userId) === myId
-    );
+    // 2. Lấy định danh hiện tại (Ưu tiên ID của User, nếu không có thì dùng Guest UUID)
+    // Ép về String để so sánh chính xác với dữ liệu từ API/Socket
+    const currentIdentity = user?.id ? String(user.id) : getGuestId();
+
+    // 3. Kiểm tra xem định danh này đã "chiếm" slot nào trong danh sách players chưa
+    const isAlreadyClaimed = room.players?.some((p: any) => {
+      const pUserId = p.userId ? String(p.userId) : null;
+      const pTempId = p.tempIdentity ? String(p.tempIdentity) : null;
+
+      return pUserId === currentIdentity || pTempId === currentIdentity;
+    });
+
+    // 4. Kiểm tra xem còn slot trống nào không
     const hasAvailablePlayer = room.players?.some(
-      (p: any) => p.userId === null
+      (p: any) => p.userId === null && p.tempIdentity === null
     );
 
-    // Nếu chưa nhận ai và vẫn còn chỗ thì hiện
+    // CHỈ HIỆN nếu chưa nhận nhân vật VÀ vẫn còn chỗ trống
     setShowSelectPlayer(!isAlreadyClaimed && hasAvailablePlayer);
-  }, [room, user?.id, accessToken, isViewer]);
+  }, [room, user?.id, isViewer]);
 
   /* =========================
         SOCKET REALTIME
      ========================= */
   useEffect(() => {
     if (!isAuthorized || !roomId) return;
-
     const socket = connectSocket();
 
     const onConnect = () => {
@@ -89,33 +96,21 @@ export const useRoomController = (roomId?: string) => {
     if (socket.connected) onConnect();
     socket.on("connect", onConnect);
 
-    // SỬA TẠI ĐÂY: Kiểm tra ID trước khi setRoom
     socket.on("room_updated", (payload) => {
-      // Ép kiểu về String để so sánh chính xác vì roomId từ useParams luôn là string
       const payloadRoomId = String(payload.id);
       const currentRoomId = String(roomId);
 
       if (payloadRoomId === currentRoomId) {
-        // console.log("✅ Cập nhật đúng phòng:", currentRoomId);
-        // console.log("🔄 Socket nhận dữ liệu mới:", payload);
-        setRoom(normalizeRoom({ ...payload, currentUserId: user?.id }));
-      } else {
-        console.warn(
-          `⚠️ Bỏ qua cập nhật từ phòng cũ: ${payloadRoomId}, phòng hiện tại: ${currentRoomId}`
-        );
+        console.log(payload);
+        const currentId = user?.id || getGuestId();
+        setRoom(normalizeRoom({ ...payload, currentUserId: currentId }));
       }
     });
 
     socket.on("room_finished", (payload) => {
-      console.log("📩 Nhận tín hiệu kết thúc phòng:", payload);
-
-      // Kiểm tra kỹ payload từ server trả về là payload.id hay payload.roomId
       const incomingId = payload.id || payload.roomId;
-
       if (String(incomingId) === String(roomId)) {
         localStorage.removeItem(`room_pin_${roomId}`);
-        // Không nên gọi disconnectSocket() ở đây nếu ứng dụng còn dùng socket ở trang khác
-        // Chỉ cần xóa listener hoặc để cleanup function lo
         navigate("/");
         toast.info("Ván đấu đã kết thúc");
       }
@@ -129,18 +124,25 @@ export const useRoomController = (roomId?: string) => {
     };
   }, [roomId, isAuthorized, user?.id, navigate]);
 
-  /* =========================
-           ACTIONS
-     ========================= */
-  // Giữ nguyên hàm updateRoom cho BidaPenaltyView
   const updateRoom = (data: any) => {
-    setRoom(normalizeRoom({ ...data, currentUserId: user?.id }));
+    const currentId = user?.id || getGuestId();
+    setRoom(normalizeRoom({ ...data, currentUserId: currentId }));
   };
 
   const handleClaimPlayer = async (playerId: number) => {
     if (!roomId) return;
     try {
-      const updatedData = await RoomService.claimPlayer({ roomId, playerId });
+      // Gửi kèm tempIdentity nếu không có accessToken
+      const payload: any = {
+        roomId,
+        playerId,
+      };
+
+      if (!accessToken) {
+        payload.tempIdentity = getGuestId();
+      }
+
+      const updatedData = await RoomService.claimPlayer(payload);
       updateRoom(updatedData);
       toast.success("Đã xác nhận nhân vật!");
     } catch (err: any) {
@@ -148,6 +150,7 @@ export const useRoomController = (roomId?: string) => {
     }
   };
 
+  // ... Các hàm khác giữ nguyên (updateScore1vs1, drawCard, v.v.)
   const updateScore1vs1 = async (winnerId: string) => {
     if (!roomId) return;
     const pin = localStorage.getItem(`room_pin_${roomId}`);
@@ -198,10 +201,6 @@ export const useRoomController = (roomId?: string) => {
     }
   };
 
-  /* =========================
-          ACTIONS BIDA BÀI
-     ========================= */
-
   const startGame = async (pin: string) => {
     if (!roomId) return;
     try {
@@ -219,7 +218,8 @@ export const useRoomController = (roomId?: string) => {
   const drawCard = async (playerId: number) => {
     if (!roomId) return;
     try {
-      const res = await RoomService.drawCard(roomId, playerId);
+      const tempId = !accessToken ? getGuestId() : undefined;
+      const res = await RoomService.drawCard(roomId, playerId, tempId);
       updateRoom(res);
       if (navigator.vibrate) navigator.vibrate(30);
     } catch (err: any) {
@@ -230,7 +230,13 @@ export const useRoomController = (roomId?: string) => {
   const discardCard = async (playerId: number, ballValue: number) => {
     if (!roomId) return;
     try {
-      const res = await RoomService.discardCard(roomId, playerId, ballValue);
+      const tempId = !accessToken ? getGuestId() : undefined;
+      const res = await RoomService.discardCard(
+        roomId,
+        playerId,
+        ballValue,
+        tempId
+      );
       updateRoom(res);
       toast.success(`Đã bỏ bài bi số ${ballValue}`);
       if (navigator.vibrate) navigator.vibrate([50, 30, 50]);
@@ -244,7 +250,6 @@ export const useRoomController = (roomId?: string) => {
     try {
       setLoading(true);
       const res = await RoomService.reset(roomId, pin);
-      console.log(res);
       updateRoom(res);
       toast.success("Ván đấu đã được reset!");
     } catch (err: any) {

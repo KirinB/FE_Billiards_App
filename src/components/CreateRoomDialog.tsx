@@ -10,7 +10,7 @@ import { cn } from "@/lib/utils";
 import { RoomService } from "@/services/room.service";
 import { type RootState } from "@/store/store";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { Lock, PlusCircle, Settings2, Trophy } from "lucide-react";
+import { Lock, PlusCircle, Settings2, Trophy, Layers } from "lucide-react";
 import { useEffect, useState } from "react";
 import { Controller, useForm } from "react-hook-form";
 import { useSelector } from "react-redux";
@@ -19,10 +19,10 @@ import { toast } from "sonner";
 import * as z from "zod";
 import { Input } from "./ui/input";
 import { Label } from "./ui/label";
+import { getGuestId } from "@/lib/guest";
 
 const nameRegex = /^[a-zA-Z0-9À-ỹ\s]+$/;
 
-// 1. Định nghĩa Object gốc trước
 const roomFormObject = z.object({
   name: z
     .string()
@@ -42,33 +42,30 @@ const roomFormObject = z.object({
   ),
 });
 
-// 2. Tạo Type từ Object gốc để đảm bảo tính nhất quán
 type RoomFormValues = z.infer<typeof roomFormObject>;
 
-// 3. Tạo Schema hoàn chỉnh với superRefine
 const roomFormSchema = roomFormObject.superRefine((data, ctx) => {
-  if (data.type !== "BIDA_BAI") {
-    for (let i = 0; i < data.playerCount; i++) {
-      const pName = data.names[i]?.trim() || "";
-      if (pName.length < 2) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Ít nhất 2 ký tự",
-          path: ["names", i],
-        });
-      } else if (pName.length > 20) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Nhỏ hơn 20 ký tự",
-          path: ["names", i],
-        });
-      } else if (!nameRegex.test(pName)) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: "Không chứa ký tự đặc biệt",
-          path: ["names", i],
-        });
-      }
+  // Validate tên cho TẤT CẢ các chế độ (bao gồm BIDA_BAI)
+  for (let i = 0; i < data.playerCount; i++) {
+    const pName = data.names[i]?.trim() || "";
+    if (pName.length < 2) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Ít nhất 2 ký tự",
+        path: ["names", i],
+      });
+    } else if (pName.length > 20) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Nhỏ hơn 20 ký tự",
+        path: ["names", i],
+      });
+    } else if (!nameRegex.test(pName)) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Không chứa ký tự đặc biệt",
+        path: ["names", i],
+      });
     }
   }
 });
@@ -85,9 +82,11 @@ const ErrorMsg = ({ message }: { message?: string }) => {
 const CreateRoomDialog = ({ onSuccess }: { onSuccess?: () => void }) => {
   const [open, setOpen] = useState(false);
   const navigate = useNavigate();
-  const { username, accessToken } = useSelector(
-    (state: RootState) => state.user
-  );
+  const {
+    username,
+    accessToken,
+    id: userId,
+  } = useSelector((state: RootState) => state.user);
 
   const {
     handleSubmit,
@@ -116,7 +115,6 @@ const CreateRoomDialog = ({ onSuccess }: { onSuccess?: () => void }) => {
   const selectedType = watch("type");
   const playerCount = watch("playerCount");
 
-  // Reset form khi mở Dialog
   useEffect(() => {
     if (open) {
       reset({
@@ -135,15 +133,11 @@ const CreateRoomDialog = ({ onSuccess }: { onSuccess?: () => void }) => {
     }
   }, [open, reset, username]);
 
-  // Logic tự động chuyển đổi số người chơi khi đổi Tab
   useEffect(() => {
     if (selectedType === "BIDA_1VS1") {
       setValue("playerCount", 2);
     } else if (selectedType === "BIDA_DIEM_DEN") {
-      // Nếu đang ở tab khác (như 1VS1) mà chuyển sang Điểm Đến, tự động set về 3
-      if (playerCount < 3) {
-        setValue("playerCount", 3);
-      }
+      if (playerCount < 3) setValue("playerCount", 3);
     } else if (selectedType === "BIDA_BAI") {
       if (playerCount < 2) setValue("playerCount", 4);
     }
@@ -152,18 +146,23 @@ const CreateRoomDialog = ({ onSuccess }: { onSuccess?: () => void }) => {
   const onSubmit = async (values: RoomFormValues) => {
     try {
       toast.loading("Đang khởi tạo...", { id: "create-room" });
+
+      const guestId = getGuestId();
+
+      const identity = userId ? null : guestId;
+
       const payload = {
         ...values,
-        playerNames:
-          values.type === "BIDA_BAI"
-            ? []
-            : values.names.slice(0, values.playerCount),
+        playerNames: values.names.slice(0, values.playerCount),
         playerCount: values.playerCount,
         cardsPerPlayer: values.type === "BIDA_BAI" ? values.cardsPerPlayer : 0,
         valBi3: values.penaltyPoints[0].value,
         valBi6: values.penaltyPoints[1].value,
         valBi9: values.penaltyPoints[2].value,
+        // Gửi thông tin định danh người tạo
+        tempIdentity: identity,
       };
+
       const res = await RoomService.create(payload as any);
       toast.success("Thành công!", { id: "create-room" });
       setOpen(false);
@@ -222,7 +221,7 @@ const CreateRoomDialog = ({ onSuccess }: { onSuccess?: () => void }) => {
 
             <div className="flex flex-col">
               <Label className="text-[10px] uppercase font-bold text-[#a8c5bb] mb-1.5 ml-1">
-                <Lock className="size-2" />
+                <Lock className="size-2 inline mr-1" />
                 Mã PIN (4 số)
               </Label>
               <Controller
@@ -308,77 +307,38 @@ const CreateRoomDialog = ({ onSuccess }: { onSuccess?: () => void }) => {
               )}
             </div>
 
-            {selectedType === "BIDA_BAI" && (
-              <div className="flex flex-col space-y-2 animate-in fade-in slide-in-from-left-2">
-                <Label className="text-[10px] uppercase font-bold text-[#a8c5bb] ml-1">
-                  Số lá bài mỗi người (1 - 13)
-                </Label>
-                <Controller
-                  control={control}
-                  name="cardsPerPlayer"
-                  render={({ field }) => (
-                    <div className="relative">
-                      <Input
-                        {...field}
-                        type="number"
-                        className={cn(
-                          "bg-white/5 border-none h-11 rounded-xl text-white focus:ring-1 ring-[#f2c94c] font-bold",
-                          errors.cardsPerPlayer &&
-                            "ring-1 ring-red-500 bg-red-500/10"
-                        )}
-                        placeholder="Mặc định là 5 lá..."
-                        onChange={(e) => field.onChange(e.target.value)} // Để coerce xử lý ép kiểu
-                      />
-                      <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] text-[#f2c94c] font-black italic">
-                        LÁ
-                      </div>
-                    </div>
-                  )}
-                />
-                <ErrorMsg message={errors.cardsPerPlayer?.message} />
-              </div>
-            )}
-
-            {selectedType === "BIDA_BAI" ? (
-              <div className="p-4 rounded-2xl bg-white/5 border border-dashed border-white/10 text-center">
-                <p className="text-[10px] text-[#a8c5bb]">
-                  Hệ thống sẽ tạo {playerCount} Slot trống.
-                </p>
-              </div>
-            ) : (
-              <div className="grid gap-3">
-                {Array.from({ length: playerCount }).map((_, i) => (
-                  <div key={i} className="flex flex-col">
-                    <div className="relative">
-                      <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[9px] font-black text-[#f2c94c]/60">
-                        P{i + 1}
-                      </span>
-                      <Controller
-                        control={control}
-                        name={`names.${i}`}
-                        render={({ field }) => (
-                          <Input
-                            {...field}
-                            disabled={i === 0 && !!accessToken}
-                            placeholder={`Tên cơ thủ ${i + 1}`}
-                            className={cn(
-                              "bg-white/5 border-none h-11 pl-10 rounded-xl text-white transition-all",
-                              errors.names?.[i] &&
-                                "ring-1 ring-red-500 bg-red-500/10"
-                            )}
-                          />
-                        )}
-                      />
-                    </div>
-                    <ErrorMsg message={(errors.names as any)?.[i]?.message} />
+            <div className="grid gap-3">
+              {Array.from({ length: playerCount }).map((_, i) => (
+                <div key={i} className="flex flex-col">
+                  <div className="relative">
+                    <span className="absolute left-4 top-1/2 -translate-y-1/2 text-[9px] font-black text-[#f2c94c]/60">
+                      P{i + 1}
+                    </span>
+                    <Controller
+                      control={control}
+                      name={`names.${i}`}
+                      render={({ field }) => (
+                        <Input
+                          {...field}
+                          disabled={i === 0 && !!accessToken}
+                          placeholder={`Tên cơ thủ ${i + 1}`}
+                          className={cn(
+                            "bg-white/5 border-none h-11 pl-10 rounded-xl text-white transition-all",
+                            errors.names?.[i] &&
+                              "ring-1 ring-red-500 bg-red-500/10"
+                          )}
+                        />
+                      )}
+                    />
                   </div>
-                ))}
-              </div>
-            )}
+                  <ErrorMsg message={(errors.names as any)?.[i]?.message} />
+                </div>
+              ))}
+            </div>
           </div>
 
           {selectedType === "BIDA_DIEM_DEN" && (
-            <div className="p-4 rounded-2xl bg-black/40 space-y-3">
+            <div className="p-4 rounded-2xl bg-black/40 space-y-3 animate-in fade-in slide-in-from-bottom-2">
               <Label className="text-[10px] uppercase font-bold text-[#a8c5bb] flex items-center gap-2">
                 <Settings2 className="size-3" /> Điểm phạt Bi 3 - 6 - 9
               </Label>
@@ -399,6 +359,36 @@ const CreateRoomDialog = ({ onSuccess }: { onSuccess?: () => void }) => {
                   />
                 ))}
               </div>
+            </div>
+          )}
+
+          {selectedType === "BIDA_BAI" && (
+            <div className="p-4 rounded-2xl bg-black/40 space-y-3 animate-in fade-in slide-in-from-bottom-2">
+              <Label className="text-[10px] uppercase font-bold text-[#a8c5bb] flex items-center gap-2">
+                <Layers className="size-3" /> Thiết lập số lá bài
+              </Label>
+              <div className="relative">
+                <Controller
+                  control={control}
+                  name="cardsPerPlayer"
+                  render={({ field }) => (
+                    <Input
+                      {...field}
+                      type="number"
+                      className={cn(
+                        "bg-white/10 border-none h-12 rounded-xl text-white text-center font-black text-lg focus:ring-1 ring-[#f2c94c]",
+                        errors.cardsPerPlayer &&
+                          "ring-1 ring-red-500 bg-red-500/10"
+                      )}
+                      onChange={(e) => field.onChange(e.target.value)}
+                    />
+                  )}
+                />
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] text-[#f2c94c] font-black italic">
+                  LÁ / NGƯỜI
+                </div>
+              </div>
+              <ErrorMsg message={errors.cardsPerPlayer?.message} />
             </div>
           )}
 

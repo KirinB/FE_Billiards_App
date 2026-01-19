@@ -49,4 +49,9 @@ export const authService = {
     );
     return response.data;
   },
+
+  async logout() {
+    const response = await axiosInstance.post(`${BASEURL}/logout`);
+    return response.data;
+  },
 };

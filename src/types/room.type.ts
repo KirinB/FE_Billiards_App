@@ -4,6 +4,8 @@ export interface CreateRoomDto {
   pin: string;
   type: "BIDA_DIEM_DEN" | "BIDA_1VS1" | "BIDA_BAI";
   playerNames: string[];
+  playerCount?: number;
+  cardsPerPlayer?: number;
   valBi3?: number;
   valBi6?: number;
   valBi9?: number;

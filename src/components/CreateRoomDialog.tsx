@@ -22,49 +22,56 @@ import { Label } from "./ui/label";
 
 const nameRegex = /^[a-zA-Z0-9À-ỹ\s]+$/;
 
-const roomFormSchema = z
-  .object({
-    name: z
-      .string()
-      .min(2, "Tên ván tối thiểu 2 ký tự")
-      .max(20, "Tên ván tối đa 20 ký tự")
-      .regex(nameRegex, "Không dùng ký tự đặc biệt"),
-    pin: z.string().min(4, "PIN phải đủ 4 số"),
-    type: z.enum(["BIDA_DIEM_DEN", "BIDA_1VS1", "BIDA_BAI"]),
-    playerCount: z.number().min(2).max(4),
-    names: z.array(z.string()),
-    penaltyPoints: z.array(
-      z.object({ key: z.number(), value: z.number().min(0) })
-    ),
-  })
-  .superRefine((data, ctx) => {
-    if (data.type !== "BIDA_BAI") {
-      for (let i = 0; i < data.playerCount; i++) {
-        const pName = data.names[i]?.trim() || "";
-        if (pName.length < 2) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: "Ít nhất 2 ký tự",
-            path: ["names", i],
-          });
-        } else if (pName.length > 20) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: "Nhỏ hơn 20 ký tự",
-            path: ["names", i],
-          });
-        } else if (!nameRegex.test(pName)) {
-          ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: "Không chứa ký tự đặc biệt",
-            path: ["names", i],
-          });
-        }
+// 1. Định nghĩa Object gốc trước
+const roomFormObject = z.object({
+  name: z
+    .string()
+    .min(2, "Tên ván tối thiểu 2 ký tự")
+    .max(20, "Tên ván tối đa 20 ký tự")
+    .regex(nameRegex, "Không dùng ký tự đặc biệt"),
+  pin: z.string().min(4, "PIN phải đủ 4 số"),
+  type: z.enum(["BIDA_DIEM_DEN", "BIDA_1VS1", "BIDA_BAI"]),
+  playerCount: z.number().min(2).max(4),
+  cardsPerPlayer: z.coerce
+    .number()
+    .min(1, "Tối thiểu 1 lá")
+    .max(13, "Tối đa 13 lá"),
+  names: z.array(z.string()),
+  penaltyPoints: z.array(
+    z.object({ key: z.number(), value: z.number().min(0) })
+  ),
+});
+
+// 2. Tạo Type từ Object gốc để đảm bảo tính nhất quán
+type RoomFormValues = z.infer<typeof roomFormObject>;
+
+// 3. Tạo Schema hoàn chỉnh với superRefine
+const roomFormSchema = roomFormObject.superRefine((data, ctx) => {
+  if (data.type !== "BIDA_BAI") {
+    for (let i = 0; i < data.playerCount; i++) {
+      const pName = data.names[i]?.trim() || "";
+      if (pName.length < 2) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Ít nhất 2 ký tự",
+          path: ["names", i],
+        });
+      } else if (pName.length > 20) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Nhỏ hơn 20 ký tự",
+          path: ["names", i],
+        });
+      } else if (!nameRegex.test(pName)) {
+        ctx.addIssue({
+          code: z.ZodIssueCode.custom,
+          message: "Không chứa ký tự đặc biệt",
+          path: ["names", i],
+        });
       }
     }
-  });
-
-type RoomFormValues = z.infer<typeof roomFormSchema>;
+  }
+});
 
 const ErrorMsg = ({ message }: { message?: string }) => {
   if (!message) return null;
@@ -90,12 +97,13 @@ const CreateRoomDialog = ({ onSuccess }: { onSuccess?: () => void }) => {
     reset,
     formState: { errors },
   } = useForm<RoomFormValues>({
-    resolver: zodResolver(roomFormSchema),
+    resolver: zodResolver(roomFormSchema) as any,
     defaultValues: {
       name: "",
       pin: "",
       type: "BIDA_DIEM_DEN",
       playerCount: 3,
+      cardsPerPlayer: 5,
       names: ["", "", "", ""],
       penaltyPoints: [
         { key: 3, value: 1 },
@@ -116,6 +124,7 @@ const CreateRoomDialog = ({ onSuccess }: { onSuccess?: () => void }) => {
         pin: "",
         type: "BIDA_DIEM_DEN",
         playerCount: 3,
+        cardsPerPlayer: 5,
         names: [username || "", "", "", ""],
         penaltyPoints: [
           { key: 3, value: 1 },
@@ -149,6 +158,8 @@ const CreateRoomDialog = ({ onSuccess }: { onSuccess?: () => void }) => {
           values.type === "BIDA_BAI"
             ? []
             : values.names.slice(0, values.playerCount),
+        playerCount: values.playerCount,
+        cardsPerPlayer: values.type === "BIDA_BAI" ? values.cardsPerPlayer : 0,
         valBi3: values.penaltyPoints[0].value,
         valBi6: values.penaltyPoints[1].value,
         valBi9: values.penaltyPoints[2].value,
@@ -296,6 +307,37 @@ const CreateRoomDialog = ({ onSuccess }: { onSuccess?: () => void }) => {
                 </div>
               )}
             </div>
+
+            {selectedType === "BIDA_BAI" && (
+              <div className="flex flex-col space-y-2 animate-in fade-in slide-in-from-left-2">
+                <Label className="text-[10px] uppercase font-bold text-[#a8c5bb] ml-1">
+                  Số lá bài mỗi người (1 - 13)
+                </Label>
+                <Controller
+                  control={control}
+                  name="cardsPerPlayer"
+                  render={({ field }) => (
+                    <div className="relative">
+                      <Input
+                        {...field}
+                        type="number"
+                        className={cn(
+                          "bg-white/5 border-none h-11 rounded-xl text-white focus:ring-1 ring-[#f2c94c] font-bold",
+                          errors.cardsPerPlayer &&
+                            "ring-1 ring-red-500 bg-red-500/10"
+                        )}
+                        placeholder="Mặc định là 5 lá..."
+                        onChange={(e) => field.onChange(e.target.value)} // Để coerce xử lý ép kiểu
+                      />
+                      <div className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] text-[#f2c94c] font-black italic">
+                        LÁ
+                      </div>
+                    </div>
+                  )}
+                />
+                <ErrorMsg message={errors.cardsPerPlayer?.message} />
+              </div>
+            )}
 
             {selectedType === "BIDA_BAI" ? (
               <div className="p-4 rounded-2xl bg-white/5 border border-dashed border-white/10 text-center">

@@ -1,8 +1,6 @@
 import BilliardCard from "@/components/BilliardCard";
-import { type RootState } from "@/store/store";
 import { AnimatePresence, motion } from "framer-motion";
-import { Play, Plus, Trophy, RefreshCw, LogOut } from "lucide-react";
-import { useSelector } from "react-redux";
+import { LogOut, Play, Plus, RefreshCw, Trophy } from "lucide-react";
 import { BidaHistoryDialog } from "../BidaHistoryDialog";
 import {
   AlertDialog,
